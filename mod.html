@@ -1,0 +1,83 @@
+<?php
+// this script mimics the role of course/modedit.php in Moodle 1.9
+
+// block direct access to this script
+if (empty($CFG)) {
+    die;
+}
+
+require_once($CFG->dirroot.'/mod/quizport/mod_form.php');
+require_once($CFG->dirroot.'/mod/quizport/lib.forms.php');
+
+// $form contains the following fields
+//     section : section number
+//     course : course id
+//     module : modules id
+//     modulename : "quizport"
+//     instance : (blank) or quizport id
+//     coursemodule : (blank) or course_modules id
+//     mode : "add" or "update"
+//     sesskey : $USER->sesskey
+// additionally, when updating (from course page)
+//     id : quizport id
+//     name : quizport name
+//     timecreated : course_modules timecreated
+//     timemodified] => course_modules timemodified
+
+if ($form->mode=='add') {
+    $cw = get_course_section($form->section, $form->course);
+    $cm = null;
+    $form->add = $module->name;
+    $form->update = 0;
+    $form->visible = $cw->visible;
+    if (isset($course->groupmode)) {
+        $form->groupmode = $course->groupmode;
+    } else {
+        // Moodle <= 1.1
+        $form->groupmode = 0;
+    }
+    $form->groupingid= 0;
+    $form->groupmembersonly = 0;
+    $form->return= 0; //must be false if this is an add, go back to course view on cancel
+} else {
+    if (! $cm = get_record('course_modules', 'id', $form->coursemodule)) {
+        error('Invalid course module id: '.$form->coursemodule);
+    }
+    $form->mode = 'update';
+    $form->add = 0;
+    $form->update = $cm->id;
+    $form->visible = $cm->visible;
+}
+
+$mform =& new mod_quizport_mod_form($form->instance, $form->section, $cm);
+$mform->set_data($form);
+$mform->display();
+
+// prevent "doubling" of html-editors
+// this switch is used in course/mod.php
+$nohtmleditorneeded = true;
+
+// expand zero-height IFRAMEs in htmlarea DIVs
+// (can occur in hidden "Advanced" sections)
+?>
+<script type="text/javascript">
+//<![CDATA[
+var obj = document.getElementsByTagName('iframe');
+if (obj) {
+    var i_max = obj.length;
+    for (var i=0; i<i_max; i++) {
+        if (obj[i].parentNode.tagName && obj[i].parentNode.tagName.toLowerCase()=='div') {
+            if (obj[i].parentNode.className && obj[i].parentNode.className=='htmlarea') {
+                if (obj[i].offsetHeight==0) {
+                    obj[i].style.height = '112px';
+                }
+                if (obj[i].offsetWidth==0) {
+                    obj[i].style.width = '598px';
+                }
+            }
+        }
+    }
+    obj = null;
+}
+//]]>
+</script>

@@ -1,0 +1,109 @@
+<DBMIGRATION type="mod/quizport" VERSION="2005120100">
+  <TABLES>
+    <TABLE name="quizport">
+      <FIELDS>
+        <FIELD name="name" method="PHP_FUNCTION" type="varchar" length="255">
+          <PHP_FUNCTION>
+            migrate2utf8_quizport_name(RECORDID)
+          </PHP_FUNCTION>
+        </FIELD>
+      </FIELDS>
+    </TABLE>
+    <TABLE name="quizport_cache">
+      <FIELDS>
+        <FIELD name="slasharguments" method="NO_CONV" type="varchar" length="1" />
+        <FIELD name="quizport_enableobfuscate" method="NO_CONV" type="varchar" length="1" />
+        <FIELD name="quizport_enableswf" method="NO_CONV" type="varchar" length="1" />
+        <FIELD name="sourcefile" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="sourcetype" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="sourcelastmodified" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="sourceetag" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="configfile" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="configlastmodified" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="configetag" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="stoptext" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="usemediafilter" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="studentfeedbackurl" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="content" method="NO_CONV" type="text" length="0" />
+        <FIELD name="md5key" method="NO_CONV" type="varchar" length="32" dropindex="quizcach_quimd5_uix" addindex="quizcach_quimd5_uix(quizid,md5key(32))" />
+      </FIELDS>
+    </TABLE>
+    <TABLE name="quizport_conditions" />
+    <TABLE name="quizport_details">
+      <FIELDS>
+        <FIELD name="details" method="NO_CONV" type="text" length="0" />
+      </FIELDS>
+    </TABLE>
+    <TABLE name="quizport_questions">
+      <FIELDS>
+        <FIELD name="dummy" dropindex="quizques_quimd5_ix" />
+        <FIELD name="name" method="PHP_FUNCTION" type="text" length="0">
+          <PHP_FUNCTION>
+            migrate2utf8_quizport_questions_name(RECORDID)
+          </PHP_FUNCTION>
+        </FIELD>
+        <FIELD name="md5key" method="NO_CONV" type="varchar" length="32" dropindex="quizques_md5_ix" addindex="quizques_md5_ix(md5key(32))" />
+        <FIELD name="dummy" addindex="quizques_quimd5_ix(quizid,md5key(32))" />
+      </FIELDS>
+    </TABLE>
+    <TABLE name="quizport_quizzes">
+      <FIELDS>
+        <FIELD name="name" method="PHP_FUNCTION" type="varchar" length="255">
+          <PHP_FUNCTION>
+            migrate2utf8_quizport_quizzes_name(RECORDID)
+          </PHP_FUNCTION>
+        </FIELD>
+        <FIELD name="sourcefile" method="NO_CONV" type="varchar" length="255" dropindex="quizquiz_sousou_ix " addindex="quizquiz_sousou_ix(sourcelocation,sourcefile(255))" />
+        <FIELD name="sourcetype" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="configfile" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="stoptext" method="PHP_FUNCTION" type="varchar" length="255">
+          <PHP_FUNCTION>
+            migrate2utf8_quizport_quizzes_name(RECORDID)
+          </PHP_FUNCTION>
+        </FIELD>
+        <FIELD name="usemediafilter" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="studentfeedbackurl" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="password" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="subnet" method="NO_CONV" type="varchar" length="255" />
+      </FIELDS>
+    </TABLE>
+    <TABLE name="quizport_quiz_attempts" />
+    <TABLE name="quizport_quiz_scores" />
+    <TABLE name="quizport_responses">
+      <FIELDS>
+        <FIELD name="correct" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="wrong" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="ignored" method="NO_CONV" type="varchar" length="255" />
+      </FIELDS>
+    </TABLE>
+    <TABLE name="quizport_strings">
+      <FIELDS>
+        <FIELD name="string" method="PHP_FUNCTION" type="varchar" length="255">
+          <PHP_FUNCTION>
+            migrate2utf8_quizport_strings_string(RECORDID)
+          </PHP_FUNCTION>
+        </FIELD>
+        <FIELD name="md5key" method="NO_CONV" type="varchar" length="32" dropindex="quizstri_md5_ix" addindex="quizstri_md5_ix(md5key(32))" />
+      </FIELDS>
+    </TABLE>
+    <TABLE name="quizport_units">
+      <FIELDS>
+        <FIELD name="entrytext" method="PHP_FUNCTION" type="text" length="0">
+          <PHP_FUNCTION>
+            migrate2utf8_quizport_units_entrytext(RECORDID)
+          </PHP_FUNCTION>
+        </FIELD>
+        <FIELD name="exittext" method="PHP_FUNCTION" type="text" length="0">
+          <PHP_FUNCTION>
+            migrate2utf8_quizport_units_exittext(RECORDID)
+          </PHP_FUNCTION>
+        </FIELD>
+        <FIELD name="popupoptions" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="password" method="NO_CONV" type="varchar" length="255" />
+        <FIELD name="subnet" method="NO_CONV" type="varchar" length="255" />
+      </FIELDS>
+    </TABLE>
+    <TABLE name="quizport_unit_attempts" />
+    <TABLE name="quizport_unit_grades" />
+  </TABLES>
+</DBMIGRATION>

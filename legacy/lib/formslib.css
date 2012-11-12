@@ -1,0 +1,98 @@
+    #course-mod #quizport,
+    #mod-quizport-mod #quizport {
+      width:80%; border:0px; padding:0px;
+    }
+    form.mform {
+      margin:0 auto; padding:0; width:100%;
+    }
+    form.mform fieldset {
+      border:1px solid #DDDDDD; padding:10px 0; margin:0.7em 0; width:100%;
+    }
+    form.mform fieldset.hidden,
+    form.mform fieldset.felement {
+      border:0;
+    }
+    form.mform fieldset.felement {
+      width:auto;
+    }
+    form.mform fieldset legend {
+      font-weight:bold; margin-left:0.5em;
+    }
+    form.mform fieldset .advancedbutton {
+      width:100%; text-align:right;
+    }
+    form.mform fieldset .advancedbutton input {
+        margin-right:10px;
+    }
+    form.mform div.fitem {
+      clear:both; width:100%; min-height:1.5em;
+    }
+    form.mform .fitemtitle {
+      display:block; float:left; width:30%; padding:0; margin:5px 0 0 10px; text-align:right;
+    }
+    form.mform .fitemtitle div {
+      display:inline;
+    }
+    div.fitem fieldset.fgroup label,
+    div.fradio label,
+    div.fcheckbox label,
+    fieldset.fdate_selector label {
+      display:inline; float:none; width:auto;
+    }
+    form.mform div.felement,
+    form.mform fieldset.felement {
+      display:block; float:left; margin:5px 0 0 10px; padding:0; text-align:left; width:60%;
+    }
+    form.mform div.fdescription {
+      clear:both; min-height:1.5em;
+    }
+    form.mform .fdescription.required {
+      text-align:right;
+    }
+    form.mform input,
+    form.mform select {
+      width:auto;
+    }
+    form.mform ftextarea {
+    }
+    form.mform br {
+      clear:left;
+    }
+    form.mform div.fhtmleditor {
+      margin:0 auto 10px auto; width:600px; clear:both; float:none; padding:25px 0 20px 0;
+    }
+    form.mform span.error,
+    form.mform span.required {
+      color:red;
+    }
+    form.mform div.error,
+    form.mform fieldset.error {
+      border:1px solid red; padding:5px; color:inherit;
+    }
+    .mform label .req, .mform label .adv {
+      cursor:help;
+    }
+
+    /* ================== */
+    /* for Moodle <= 1.4  */ 
+    /* ================== */
+
+    /* show and hide Advanced form items */
+
+    
+    .accesshide {
+      position:absolute;
+      top:-1000px;
+      left:10px;
+      font-weight:normal;
+      font-size:1em;
+    }
+    span.hide,
+    div.hide {
+      display:none;
+    }
+
+    /* center subheadings */
+    h3.main {
+        text-align: center;
+    }

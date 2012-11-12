@@ -1,0 +1,62 @@
+<h1>Use media filter</h1>
+<p>
+    This setting specifies the media filter to be used.
+</p>
+<div class="indent">
+    <p>
+        <b>None</b><br />
+        The content will not be passed through any media filters.
+    </p>
+    <p>
+        <b>Moodle's standard media filters</b><br />
+        The content will be passed through Moodle's standard media filters.
+        These filters search for links to common types of sound and movie file,
+        and convert those links to suitable media players.
+    </p>
+    <p>
+        <b>QuizPort media filter</b><br />
+        The content will be passed through filters which detect links, images,
+        sounds and movies to be specified using a square bracket notation.<br />
+    </p>
+    <p>
+        The square-bracket notation has the following syntax:<br />
+        <code>[url &nbsp; player &nbsp; width &nbsp; height &nbsp; options]</code>
+    </p>
+    <ul>
+        <li>
+            <b>url</b>:
+            the relative or absolute url of the media file
+        </li>
+        <li>
+            <b>player (optional)</b>:
+            the name of the player to be inserted.
+            The default value for this setting is "moodle".
+            The standard version of the QuizPort module also offers the following players:
+            <div class="indent">
+                <b>dew</b>: an mp3 player<br />
+                <b>dyer</b>: mp3 player by Bernard Dyer<br />
+                <b>hbs</b>: mp3 player from Half-Baked Software<br />
+                <b>image</b>: insert an image into the web page<br />
+                <b>link</b>: insert a link to another web page<br />
+            </div>        </li>
+        <li>
+            <b>width (optional)</b>:
+            the required width of the player
+         </li>
+        <li>
+            <b>height (optional)</b>:
+            the required height of the player.
+            If omitted this value will be set to the same as the width setting.
+         </li>
+        <li>
+            <b>options (optional)</b>:
+            a comma-separated list options to be passed to the player.
+            Each option can be a simple on/off switch, or a name value pair.
+            <ul>
+                <li>name</li>
+                <li>name=value</li>
+                <li>name="some value with spaces"</li>
+            </ul>
+         </li>
+     </ul>
+</div>

@@ -1,0 +1,147 @@
+<?php
+// block direct access to this script
+if (empty($CFG)) {
+    die;
+}
+// standardize Moodle API to Moodle 2.0
+require_once($CFG->dirroot.'/mod/quizport/legacy.php');
+?>
+<form method="post" action="module.php" name="form">
+<fieldset style="display:none">
+<?php
+    $configs = array(
+        'enablemymoodle' => 'yesno',
+        'enablecache' => 'yesno',
+        'enablecron' => 'selectmulti',
+        'enableswf' => 'yesno',
+        'enableobfuscate' => 'yesno',
+        'frameheight' => 'textfield',
+        'lockframe' => 'yesno',
+        'storedetails' => 'yesno',
+        'maxeventlength' => 'textfield'
+    );
+    if ($CFG->majorrelease<=1.5) {
+        unset($configs['enablemymoodle']);
+    }
+    if ($CFG->majorrelease<=1.4) {
+        foreach ($configs as $config=>$type) {
+            if ($type=='selectmulti') {
+                print '<input type="hidden" name="quizport_'.$config.'" value="" />'."\n";
+                unset($configs[$config]);
+            }
+        }
+    } else {
+        // Moodle >= 1.5
+        print '<input type="hidden" name="module" value="quizport" />'."\n";
+    }
+    if (isset($USER->sesskey)) {
+        // Moodle >= 1.4
+        print '<input type="hidden" name="sesskey" value="'.$USER->sesskey.'" />'."\n";
+    }
+?>
+</fieldset>
+<table cellpadding="9" cellspacing="0">
+<?php
+    foreach ($configs as $config=>$type) {
+        $quizport_config = 'quizport_'.$config;
+        if (! isset($CFG->$quizport_config)) {
+            $CFG->$quizport_config = '';
+        }
+        if ($CFG->majorrelease<=1.4) {
+            $fieldname = $quizport_config;
+        } else {
+            $fieldname = $config;
+        }
+?>
+    <tr valign="top">
+        <th align="right"><?php print $quizport_config ?>:</th>
+        <td><?php
+            switch ($type) {
+                case 'yesno':
+                    // Note: you could use checkboxes with the following line:
+                    // print_checkbox($fieldname, 1, $CFG->$quizport_config);
+                    // however unchecked checkboxes do not return a value in an html form,
+                    // so once checked, it becomes impossible to uncheck them on the config page
+                    // therefore, we have to use drop down menus instead ...
+                    $options = array(
+                        '0' => get_string('no'),
+                        '1' => get_string('yes')
+                    );
+                    choose_from_menu($options, $fieldname, $CFG->$quizport_config, '');
+                    break;
+
+                case 'textfield':
+                    print_textfield($fieldname, $CFG->$quizport_config, '', 4, 4);
+                    break;
+
+                case 'select':
+                case 'selectmulti':
+                    $size = 0;
+                    $class = '';
+                    $multiple = false;
+
+                    $options = array();
+                    if ($config=='enablecron') {
+                        $size = 8;
+                        $multiple = true;
+                        $timezone = get_user_timezone_offset();
+                        if (abs($timezone) > 13) {
+                            $timezone = 0;
+                        } else if ($timezone>0) {
+                            $timezone = $timezone - 24;
+                        }
+                        for ($i=0; $i<=23; $i++) {
+                            $options[($i - $timezone) % 24] = gmdate('H:i', $i * HOURSECS);
+                        }
+                        unset($timezone);
+                    }
+
+                    print "\n".'<select ';
+                    if ($multiple) {
+                        print ' multiple="multiple"';
+                        if ($size) {
+                            print ' size="'.$size.'"';
+                        }
+                        print ' name="'.$fieldname.'[]"';
+                    } else {
+                        print ' name="'.$fieldname.'"';
+                    }
+                    print ' class="select'.($class ? ' '.$class : '').'">';
+
+                    $values = explode(',', $CFG->$quizport_config);
+                    foreach ($options as $value=>$text) {
+                        if (in_array($value, $values)) {
+                            $selected = ' selected="selected"';
+                        } else {
+                            $selected = '';
+                        }
+                        print '<option value="'.$value.'"'.$selected.'>'.$text.'</option>';
+                    }
+                    print '</select>'."\n";
+
+                    unset($multiple, $class, $size, $selected, $values, $value, $text);
+                    break;
+            }
+        ?></td>
+        <td><?php
+            print_string($config, 'quizport');
+            if ($config=='enablecache') {
+                $str = get_string('clearcache', 'quizport');
+                $url = $CFG->wwwroot.'/mod/quizport/db/clearcache.php';
+                $link = ' <span style="white-space: nowrap">'.element_to_popup_window('link', $url, '', $str, 300, 600, $str, '', true).'</span>';
+            } else {
+                $link = '';
+            }
+            print '<p><small>'.get_string('config'.$config, 'quizport').$link.'</small></p>';
+            unset($link, $str, $url);
+        ?></td>
+    </tr>
+<?php
+    } // end foreach
+    unset($configs, $config, $type, $quizport_config, $options);
+?>
+    <tr>
+        <td colspan="3" align="center"><input type="submit" value="<?php print_string('savechanges') ?>"></td>
+    </tr>
+</table>
+</form>

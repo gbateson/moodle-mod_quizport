@@ -1,0 +1,31 @@
+<h1>Sort order</h1>
+<p>
+    The sort-order of pre-conditions serves two purposes.
+    Firstly, it specifies the order in which the pre-conditions are processed.
+    Secondly, it allows pre-conditions to be combined into groups of conditions,
+    any of which can enable access to the quiz.
+</p>
+<p>
+    In the simple case, all pre-conditions have the same sort order, usually "0",
+    and access to the quiz is granted if all the pre-conditions are satisfied.
+</p>
+<p>
+    In a more complicated situation, pre-conditions on a quiz may have different sort-orders.
+    In such a situation, pre-conditions will be grouped together acording to their sort order.
+    There may be more than one pre-condition in any these groups.
+    If all conditions in any group are satisfied then the student is given access to the quiz.
+</p>
+<p>
+    In technical terms, we could say that the sort-order groups on a quiz are joined with logical-OR,
+    whereas the members within a sort-order group are joined with logical-AND.
+</p>
+    To illustrate this with an example, consider the following conditions on a quiz
+</p>
+<ul>
+    <li>sort-order group (1) contains pre-conditions (a), (b) and (c).</li>
+    <li>sort-order group (2) contains pre-conditions (d) and (e)</li>
+</ul>
+<p>
+    The pre-conditions are satisfied if (a) AND (b) AND (c) are true, OR if (d) AND (e) are true.
+</p>
+

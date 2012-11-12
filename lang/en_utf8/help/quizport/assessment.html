@@ -1,0 +1,72 @@
+<h1>Assessment</h1>
+<p>
+    The assessment settings for QuizPort units and quizzes define the following:
+</p>
+<ul>
+    <li>how the quiz attempts are combined to form a single quiz score</li>
+    <li>the contribution of the quiz score toward the grade for a single unit attempt</li>
+    <li>how the unit attempt grades are combined to get a single unit grade</li>
+</ul>
+<p>
+    <b>Quiz attempt scores</b><br />
+    The quiz attempt scores are normalized using the following calculation:
+</p>
+<table border="0"><tbody><tr>
+    <td align="center" valign="middle">
+        <tt>(attempt score - minimum score)</tt><br />
+        <tt>------------------------------</tt><br \>
+        <tt>maximum score</tt><br />
+    </td>
+    <td align="center" valign="middle"><big><big> &nbsp; X &nbsp; </big></big></td>
+    <td align="center" valign="middle">
+        <tt>score limit</tt><br />
+        <tt>-----------</tt><br \>
+        <tt>100</tt><br />
+    </td>
+</tr></tbody></table>
+<p>
+    <b>Quiz score</b><br />
+    Depending on the quiz's scoring method setting, the score for the
+    quiz is set to the first, last, highest or average of the normalized quiz
+    attempt scores.
+</p>
+<p>
+    The quiz scores are then weighted using the following calculation:
+</p>
+<table border="0"><tbody><tr>
+    <td align="center" valign="middle">
+        <tt>quiz score</tt><br />
+    </td>
+    <td align="center" valign="middle"><big><big> &nbsp; X &nbsp; </big></big></td>
+    <td align="center" valign="middle">
+        <tt>score weighting</tt><br />
+        <tt>--------------</tt><br \>
+        <tt>100</tt><br />
+    </td>
+</tr></tbody></table>
+<p>
+    <b>Unit attempt grade</b><br />
+    The unit attempt grade is set to the total, highest or last
+    of the weighted quiz scores, depending on the unit's attempt
+    grade method setting.
+</p>
+<p>
+    <b>Unit grade</b><br />
+    The grade for the unit is set to the first, last, highest or
+    average unit attempt grade, depending on the unit's grade method
+    setting.
+</p>
+<p>
+    Finally, the grade is weighted according to the following calculation:
+</p>
+<table border="0"><tbody><tr>
+    <td align="center" valign="middle">
+        <tt>unit grade</tt><br />
+    </td>
+    <td align="center" valign="middle"><big><big> &nbsp; X &nbsp; </big></big></td>
+    <td align="center" valign="middle">
+        <tt>grade weighting</tt><br />
+        <tt>-----------</tt><br \>
+        <tt>100</tt><br />
+    </td>
+</tr></tbody></table>
