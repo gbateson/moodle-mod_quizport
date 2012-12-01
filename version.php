@@ -3,8 +3,8 @@
 //  Code fragment to define the version of quizport
 //  called by moodle_needs_upgrading() and /admin/index.php
 
-$module->version  = 2008040137;  // release date of this version
-$module->release  = 'v1.0.37';   // human-friendly version name (used in mod/quizport/lib.php)
+$module->version  = 2008040138;  // release date of this version
+$module->release  = 'v1.0.38';   // human-friendly version name (used in mod/quizport/lib.php)
 $module->cron     = 60;          // period for cron to check this module (secs)
 
 if (defined('MATURITY_STABLE')) {

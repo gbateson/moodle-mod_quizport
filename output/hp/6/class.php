@@ -617,6 +617,12 @@ class quizport_output_hp_6 extends quizport_output_hp {
     function fix_js_Client(&$str, $start, $length) {
         $substr = substr($str, $start, $length);
 
+        // refine detection of Chrome browser
+        $search = 'this.geckoVer < 20020000';
+        if ($pos = strpos($substr, $search)) {
+            $substr = substr_replace($substr, 'this.geckoVer > 10000000 && ', $pos, 0);
+        }
+
         // add detection of Chrome browser
         $search = '/(\s*)if \(this\.min == false\)\{/s';
         $replace = "\\1"
