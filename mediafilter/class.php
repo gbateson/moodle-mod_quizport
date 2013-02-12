@@ -169,7 +169,7 @@ class quizport_mediafilter {
         $pos = 1;
         switch ($pos) {
             case 0: $search = '/^[^?]*\?'.'[^=]+=([^&]*)'.'.*$/'; break;
-            case 1: $search = '/^[^?]*\?'.'(?:file|src|thesound|mp3)+=([^&]*)'.'.*$/'; break;
+            case 1: $search = '/^[^?]*\?'.'(?:file|song_url|src|thesound|mp3)+=([^&]*)'.'.*$/'; break;
             case 2: $search = '/^[^?]*\?'.'(?:[^=]+=[^&]*&(?:amp;))*'.'[^=]+=([^&]*)'.'$/'; break;
         }
         $url = preg_replace($search, '$1', $url, 1);

@@ -1120,7 +1120,7 @@ class quizport_output {
 
         // convert urls, if any, in the query string
         if ($query) {
-            $search = '/'.'(file|src|thesound|mp3)='."([^&]+)".'/ise';
+            $search = '/'.'(file|song_url|src|thesound|mp3)='."([^&]+)".'/ise';
             $replace = '"\\1=".$this->convert_url("'.$baseurl.'","'.$sourcefile.'","\\2")';
             $query = preg_replace($search, $replace, $query);
         }
