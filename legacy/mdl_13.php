@@ -110,11 +110,11 @@ if (! function_exists('clean_param')) {
         }
 
         if ($options & PARAM_ALPHA) {        // Remove everything not a-zA-Z, coverts to lowercase
-            $param = eregi_replace('[^a-zA-Z]', '', $param);
+            $param = preg_replace('/[^a-zA-Z]/', '', $param);
         }
 
         if ($options & PARAM_ALPHANUM) {     // Remove everything not a-zA-Z0-9
-            $param = eregi_replace('[^A-Za-z0-9]', '', $param);
+            $param = preg_replace('/[^a-zA-Z0-9]/', '', $param);
         }
 
         if ($options & PARAM_BOOL) {         // Convert to 1 or 0
@@ -130,17 +130,17 @@ if (! function_exists('clean_param')) {
         }
 
         if ($options & PARAM_FILE) {         // Strip all suspicious characters from filename
-            $param = ereg_replace('[[:cntrl:]]|[<>"`\|\':\\/]', '', $param);
-            $param = ereg_replace('\.\.+', '', $param);
+            $param = preg_replace('/[[:cntrl:]]|[<>"`\|\':\\/]/', '', $param);
+            $param = preg_replace('/\.\.+/', '', $param);
         }
 
         if ($options & PARAM_PATH) {         // Strip all suspicious characters from file path
             $param = str_replace('\\\'', '\'', $param);
             $param = str_replace('\\"', '"', $param);
             $param = str_replace('\\', '/', $param);
-            $param = ereg_replace('[[:cntrl:]]|[<>"`\|\':]', '', $param);
-            $param = ereg_replace('\.\.+', '', $param);
-            $param = ereg_replace('//+', '/', $param);
+            $param = preg_replace('/[[:cntrl:]]|[<>"`\|\':]/', '', $param);
+            $param = preg_replace('/\.\.+/', '', $param);
+            $param = preg_replace('/\/\/+/', '/', $param);
         }
 
         if ($options & PARAM_HOST) {         // allow FQDN or IPv4 dotted quad

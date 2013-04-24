@@ -1770,19 +1770,24 @@ class quizport_output_hp_6 extends quizport_output_hp {
     function get_feedback_teachers() {
         $context = get_context_instance(CONTEXT_COURSE, $this->source->courseid);
         $teachers = get_users_by_capability($context, 'mod/quizport:grade');
-        if (! $teachers) {
+
+        $details = array();
+        if (isset($teachers) && count($teachers)) {
+            if ($this->studentfeedback==QUIZPORT_FEEDBACK_MOODLEMESSAGING) {
+                $detail = 'id';
+            } else {
+                $detail = 'email';
+            }
+            foreach ($teachers as $teacher) {
+                $details[] = "new Array('".addslashes_js(fullname($teacher))."', '".addslashes_js($teacher->$detail)."')";
+            }
+        }
+
+        if ($details = implode(', ', $details)) {
+            return 'new Array('.$details.')';
+        } else {
             return '';
         }
-        if ($this->studentfeedback==QUIZPORT_FEEDBACK_MOODLEMESSAGING) {
-            $detail = 'id';
-        } else {
-            $detail = 'email';
-        }
-        $details = array();
-        foreach ($teachers as $teacher) {
-            $details[] = "new Array('".addslashes_js(fullname($teacher))."', '".addslashes_js($teacher->$detail)."')";
-        }
-        return 'new Array('.implode(', ', $details).')';
     }
 
     function fix_reviewoptions() {
