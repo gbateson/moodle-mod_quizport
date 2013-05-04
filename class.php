@@ -2566,6 +2566,10 @@ class mod_quizport {
     // check user can start a new unit/quiz attempt
 
     function require_canstart($type) {
+        if (has_capability('mod/quizport:preview', $this->modulecontext)) {
+            // teacher can always start new attempt
+            return $this->require_newattempt($type);
+        }
         if (! $error = $this->require_delay($type, 'delay1')) {
             if (! $error = $this->require_delay($type, 'delay2')) {
                 if (! $error = $this->require_moreattempts($type)) {
