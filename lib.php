@@ -2227,6 +2227,7 @@ function quizport_get_cm(&$course, &$thiscm, $cmid, $type) {
     // set default search values
     $id = 0;
     $module = '';
+    $graded = 0;
     $section = -1;
 
     // restrict search values
@@ -2236,7 +2237,10 @@ function quizport_get_cm(&$course, &$thiscm, $cmid, $type) {
         if ($cmid==QUIZPORT_ACTIVITY_COURSE_QUIZPORT  || $cmid==QUIZPORT_ACTIVITY_SECTION_QUIZPORT) {
             $module = 'quizport';
         }
-        if ($cmid==QUIZPORT_ACTIVITY_SECTION_ANY || $cmid==QUIZPORT_ACTIVITY_SECTION_QUIZPORT) {
+        if ($cmid==QUIZPORT_ACTIVITY_COURSE_GRADED  || $cmid==QUIZPORT_ACTIVITY_SECTION_GRADED) {
+            $graded = ($CFG->majorrelease >= 1.9); // no grades before Moodle 1.9
+        }
+        if ($cmid==QUIZPORT_ACTIVITY_SECTION_ANY || $cmid==QUIZPORT_ACTIVITY_SECTION_GRADED || $cmid==QUIZPORT_ACTIVITY_SECTION_QUIZPORT) {
             $section = $modinfo[$thiscm->id]->section;
         }
     }
@@ -2251,6 +2255,11 @@ function quizport_get_cm(&$course, &$thiscm, $cmid, $type) {
             $select .= " AND module=(SELECT id FROM {modules} WHERE name='$module')";
         }
         $coursemodules = $DB->get_records_select('course_modules', $select, null, 'id', 'id,instance');
+    }
+
+    if ($graded) {
+        $select = "courseid=$course->id AND itemtype='mod' AND gradetype<>0"; // 0 = GRADE_TYPE_NONE
+        $gradedcms = $DB->get_records_select('grade_items', $select, null, 'id', 'id,itemmodule,iteminstance,gradetype');
     }
 
     // get cm ids (reverse order if necessary)
@@ -2282,6 +2291,10 @@ function quizport_get_cm(&$course, &$thiscm, $cmid, $type) {
                     return false; // later section
                 }
             }
+        }
+
+        if ($graded && empty($gradedcms[$cmid])) {
+            continue; // cm is not graded
         }
         if ($module && $cm->mod!=$module) {
             continue; // wrong module

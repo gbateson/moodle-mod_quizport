@@ -354,6 +354,8 @@ function quizport_add_activity_list(&$mform, $type) {
         get_string($type=='entry' ? 'previous' : 'next') => array(
             QUIZPORT_ACTIVITY_COURSE_ANY => get_string($type.'cmcourse', 'quizport'),
             QUIZPORT_ACTIVITY_SECTION_ANY => get_string($type.'cmsection', 'quizport'),
+            QUIZPORT_ACTIVITY_COURSE_GRADED => get_string($type.'gradedcourse', 'quizport'),
+            QUIZPORT_ACTIVITY_SECTION_GRADED => get_string($type.'gradedsection', 'quizport'),
             QUIZPORT_ACTIVITY_COURSE_QUIZPORT => get_string($type.'quizportcourse', 'quizport'),
             QUIZPORT_ACTIVITY_SECTION_QUIZPORT => get_string($type.'quizportsection', 'quizport')
         )

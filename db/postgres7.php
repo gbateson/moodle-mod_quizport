@@ -525,6 +525,17 @@ function quizport_upgrade($oldversion, $module=null, $stopversion=0) {
         quizport_upgrade_savepoint($newversion);
     }
 
+    $newversion = 2008040141;
+    if ($result && $oldversion < $newversion) {
+        $fields = array('entrycm', 'exitcm');
+        foreach ($fields as $field) {
+            execute_sql("UPDATE {$CFG->prefix}quizport_units SET $field = -5 WHERE $field = -3");
+            execute_sql("UPDATE {$CFG->prefix}quizport_units SET $field = -6 WHERE $field = -4");
+        }
+        $unset_strings = true;
+        quizport_upgrade_savepoint($newversion);
+    }
+
     // reset missingstrings, if necessary
     if ($unset_strings) {
         for ($i=10; $i<=19; $i++) {

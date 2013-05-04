@@ -113,8 +113,10 @@ define('QUIZPORT_TIMELIMIT_SPECIFIC', '0');
 define('QUIZPORT_ACTIVITY_NONE', '0');
 define('QUIZPORT_ACTIVITY_COURSE_ANY', '-1');
 define('QUIZPORT_ACTIVITY_SECTION_ANY', '-2');
-define('QUIZPORT_ACTIVITY_COURSE_QUIZPORT', '-3');
-define('QUIZPORT_ACTIVITY_SECTION_QUIZPORT', '-4');
+define('QUIZPORT_ACTIVITY_COURSE_GRADED', '-3');
+define('QUIZPORT_ACTIVITY_SECTION_GRADED', '-4');
+define('QUIZPORT_ACTIVITY_COURSE_QUIZPORT', '-5');
+define('QUIZPORT_ACTIVITY_SECTION_QUIZPORT', '-6');
 
 define('QUIZPORT_ENTRYOPTIONS_TITLE', 0x01);
 define('QUIZPORT_ENTRYOPTIONS_GRADING', 0x02);
@@ -356,6 +358,8 @@ function quizport_format_cm($cm=null, $type='') {
             QUIZPORT_ACTIVITY_NONE => get_string('none'),
             QUIZPORT_ACTIVITY_COURSE_ANY => get_string($type.'cmcourse', 'quizport'),
             QUIZPORT_ACTIVITY_SECTION_ANY => get_string($type.'cmsection', 'quizport'),
+            QUIZPORT_ACTIVITY_COURSE_GRADED => get_string($type.'gradedcourse', 'quizport'),
+            QUIZPORT_ACTIVITY_SECTION_GRADED => get_string($type.'gradedsection', 'quizport'),
             QUIZPORT_ACTIVITY_COURSE_QUIZPORT => get_string($type.'quizportcourse', 'quizport'),
             QUIZPORT_ACTIVITY_SECTION_QUIZPORT => get_string($type.'quizportsection', 'quizport')
         );

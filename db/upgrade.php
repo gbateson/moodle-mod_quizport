@@ -969,6 +969,16 @@ function xmldb_quizport_upgrade($oldversion=0) {
         upgrade_mod_savepoint($result, "$newversion", 'quizport');
     }
 
+    $newversion = 2008040141;
+    if ($result && $oldversion < $newversion) {
+        $fields = array('entrycm', 'exitcm');
+        foreach ($fields as $field) {
+            $DB->set_field('quizport_units', $field, -5, array($field => -3));
+            $DB->set_field('quizport_units', $field, -6, array($field => -4));
+        }
+        upgrade_mod_savepoint($result, "$newversion", 'quizport');
+    }
+
     if ($unset_strings) {
         for ($i=10; $i<=19; $i++) {
             $config = 'quizport_missingstrings_mdl_'.$i;
