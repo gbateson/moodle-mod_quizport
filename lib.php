@@ -2258,8 +2258,17 @@ function quizport_get_cm(&$course, &$thiscm, $cmid, $type) {
     }
 
     if ($graded) {
+        $graded = array();
         $select = "courseid=$course->id AND itemtype='mod' AND gradetype<>0"; // 0 = GRADE_TYPE_NONE
-        $gradedcms = $DB->get_records_select('grade_items', $select, null, 'id', 'id,itemmodule,iteminstance,gradetype');
+        if ($items = $DB->get_records_select('grade_items', $select, null, 'id', 'id,itemmodule,iteminstance,gradetype')) {
+            foreach ($items as $item) {
+                if (empty($graded[$item->itemmodule])) {
+                    $graded[$item->itemmodule] = array();
+                }
+                $graded[$item->itemmodule][$item->iteminstance] = true;
+            }
+        }
+        unset($items);
     }
 
     // get cm ids (reverse order if necessary)
@@ -2293,7 +2302,7 @@ function quizport_get_cm(&$course, &$thiscm, $cmid, $type) {
             }
         }
 
-        if ($graded && empty($gradedcms[$cmid])) {
+        if ($graded && empty($graded[$cm->mod][$cm->id])) {
             continue; // cm is not graded
         }
         if ($module && $cm->mod!=$module) {
