@@ -519,12 +519,6 @@ function quizport_upgrade($oldversion, $module=null, $stopversion=0) {
         quizport_upgrade_savepoint($newversion);
     }
 
-    $newversion = 2008040139;
-    if ($result && $oldversion < $newversion) {
-        $empty_cache = true;
-        quizport_upgrade_savepoint($newversion);
-    }
-
     $newversion = 2008040141;
     if ($result && $oldversion < $newversion) {
         $fields = array('entrycm', 'exitcm');
@@ -533,6 +527,12 @@ function quizport_upgrade($oldversion, $module=null, $stopversion=0) {
             execute_sql("UPDATE {$CFG->prefix}quizport_units SET $field = -6 WHERE $field = -4");
         }
         $unset_strings = true;
+        quizport_upgrade_savepoint($newversion);
+    }
+
+    $newversion = 2008040142;
+    if ($result && $oldversion < $newversion) {
+        $empty_cache = true;
         quizport_upgrade_savepoint($newversion);
     }
 

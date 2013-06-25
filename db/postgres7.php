@@ -536,6 +536,12 @@ function quizport_upgrade($oldversion, $module=null, $stopversion=0) {
         quizport_upgrade_savepoint($newversion);
     }
 
+    $newversion = 2008040142;
+    if ($result && $oldversion < $newversion) {
+        $empty_cache = true;
+        quizport_upgrade_savepoint($newversion);
+    }
+
     // reset missingstrings, if necessary
     if ($unset_strings) {
         for ($i=10; $i<=19; $i++) {

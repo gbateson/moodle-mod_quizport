@@ -963,12 +963,6 @@ function xmldb_quizport_upgrade($oldversion=0) {
         upgrade_mod_savepoint($result, "$newversion", 'quizport');
     }
 
-    $newversion = 2008040139;
-    if ($result && $oldversion < $newversion) {
-        $empty_cache = true;
-        upgrade_mod_savepoint($result, "$newversion", 'quizport');
-    }
-
     $newversion = 2008040141;
     if ($result && $oldversion < $newversion) {
         $fields = array('entrycm', 'exitcm');
@@ -976,6 +970,12 @@ function xmldb_quizport_upgrade($oldversion=0) {
             $DB->set_field('quizport_units', $field, -5, array($field => -3));
             $DB->set_field('quizport_units', $field, -6, array($field => -4));
         }
+        upgrade_mod_savepoint($result, "$newversion", 'quizport');
+    }
+
+    $newversion = 2008040142;
+    if ($result && $oldversion < $newversion) {
+        $empty_cache = true;
         upgrade_mod_savepoint($result, "$newversion", 'quizport');
     }
 
