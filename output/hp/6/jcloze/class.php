@@ -297,6 +297,7 @@ class quizport_output_hp_6_jcloze extends quizport_output_hp_6 {
             $append = "\n"
                 ."// send results after delay\n"
                 ."	setTimeout('HP.onunload(".QUIZPORT_STATUS_ABANDONED.",$flag)',SubmissionTimeout);\n"
+                ."	return false;\n"
             ;
             $substr = substr_replace($substr, $append, $pos, 0);
         }

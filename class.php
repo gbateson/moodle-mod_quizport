@@ -27,17 +27,18 @@ if (! defined('QUIZPORT_PAGEID')) {
 if (QUIZPORT_PAGECLASS=='mod-quizport') {
 
     // initialize main global objects that the QuizPort module maintains
-    $course       = null;
-    $coursemodule = null;
-    $quizport     = null;
-    $unit         = null;
-    $quiz         = null;
-    $condition    = null;
-    $unitgrade    = null;
-    $unitattempt  = null;
-    $quizscore    = null;
-    $quizattempt  = null;
-    $block        = null;
+    $course       = new stdClass();
+    $module       = new stdClass();
+    $coursemodule = new stdClass();
+    $quizport     = new stdClass();
+    $unit         = new stdClass();
+    $quiz         = new stdClass();
+    $condition    = new stdClass();
+    $unitgrade    = new stdClass();
+    $unitattempt  = new stdClass();
+    $quizscore    = new stdClass();
+    $quizattempt  = new stdClass();
+    $block        = new stdClass();
 
     $courseid       = optional_param('courseid', 0, PARAM_INT);
     $coursemoduleid = optional_param('cm', 0, PARAM_INT);
@@ -207,6 +208,45 @@ if (QUIZPORT_PAGECLASS=='mod-quizport') {
             case 'c': $course->$field = $value; break;
         }
     }
+
+    // ensure unused object are empty
+    if (empty($course->id)) {
+        $course = null;
+    }
+    if (empty($module->id)) {
+        $module = null;
+    }
+    if (empty($coursemodule->id)) {
+        $coursemodule = null;
+    }
+    if (empty($quizport->id)) {
+        $quizport = null;
+    }
+    if (empty($unit->id)) {
+        $unit = null;
+    }
+    if (empty($quiz->id)) {
+        $quiz = null;
+    }
+    if (empty($condition->id)) {
+        $condition = null;
+    }
+    if (empty($unitgrade->id)) {
+        $unitgrade = null;
+    }
+    if (empty($unitattempt->id)) {
+        $unitattempt = null;
+    }
+    if (empty($quizscore->id)) {
+        $quizscore = null;
+    }
+    if (empty($quizattempt->id)) {
+        $quizattempt = null;
+    }
+    if (empty($block->id)) {
+        $block = null;
+    }
+
     if ($CFG->majorrelease>=2.0) {
         // mimic get_coursemodule_from_id() and get_coursemodule_from_instance()
         if ($coursemodule) {
