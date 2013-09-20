@@ -233,10 +233,8 @@ function hpQuizAttempt() {
                     parameters += (parameters=='' ? '' : '&') + obj.name + '=' + escape(value); // encodeURI
                 }
                 HP_httpRequest.onreadystatechange = HP_onreadystatechange;
-                HP_httpRequest.open(this.form.method, this.form.action, true); // ! this.redirect
+                HP_httpRequest.open(this.form.method, this.form.action, (this.forceajax ? false : true)); // false=SYNCHRONOUS, true=ASYNCHRONOUS
                 HP_httpRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                HP_httpRequest.setRequestHeader("Content-length", parameters.length);
-                HP_httpRequest.setRequestHeader("Connection", "close");
                 HP_httpRequest.send(parameters);
             } else {
                 this.form.submit();

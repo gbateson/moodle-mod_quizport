@@ -212,6 +212,9 @@ class quizport_output_hp_6 extends quizport_output_hp {
             $search = "/(\s*)window.onunload = new Function[^\r\n]*;/s";
             $replace = "\\0\\1"
                 ."window.quizportbeforeunload = function(){\\1"
+                ."	if (window.HP) {\\1"
+                ."		HP.onunload();\\1"
+                ."	}\\1"
                 ."	return '".$this->source->js_value_safe($onbeforeunload, true)."';\\1"
                 ."}\\1"
                 ."if (window.opera) {\\1"
