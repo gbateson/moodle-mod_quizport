@@ -542,6 +542,11 @@ function quizport_upgrade($oldversion, $module=null, $stopversion=0) {
         table_column('quizport_cache',  '', 'quizport_bodystyles', 'varchar', 8, '', '', 'not null', 'slasharguments');
         table_column('quizport_cache',  '', 'allowpaste', 'integer', 2, 'insigned', 0, 'not null', 'stoptext');
         table_column('quizport_quizzes', '', 'allowpaste', 'integer', 2, 'insigned', 0, 'not null', 'stoptext');
+        quizport_upgrade_savepoint($newversion);
+    }
+
+    $newversion = 2008040149;
+    if ($result && $oldversion < $newversion) {
         $empty_cache = true;
         quizport_upgrade_savepoint($newversion);
     }

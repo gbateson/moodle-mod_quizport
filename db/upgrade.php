@@ -999,9 +999,13 @@ function xmldb_quizport_upgrade($oldversion=0) {
             xmldb_quizport_field_set_attributes($field, XMLDB_TYPE_INTEGER, '2', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'stoptext');
             $dbman->add_field($table, $field);
         }
-
         upgrade_mod_savepoint($result, "$newversion", 'quizport');
+    }
+
+    $newversion = 2008040149;
+    if ($result && $oldversion < $newversion) {
         $empty_cache = true;
+        upgrade_mod_savepoint($result, "$newversion", 'quizport');
     }
 
     if ($unset_strings) {

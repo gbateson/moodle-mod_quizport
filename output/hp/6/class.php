@@ -129,6 +129,7 @@ class quizport_output_hp_6 extends quizport_output_hp {
                 // the following is not necessary for standard HP styles, but may required to handle some custom styles
                 $this->styles = str_replace('TheBody', 'mod-quizport-view', $this->styles);
             }
+            $this->styles = preg_replace('/[\n\r]*[\t ]*\/\*.*?\*\//s', '', $this->styles); // remove comments
             $this->styles = $this->remove_blank_lines($this->styles);
         }
 
@@ -156,7 +157,7 @@ class quizport_output_hp_6 extends quizport_output_hp {
             $this->scripts = $this->remove_blank_lines($this->scripts);
 
             // standardize "} else {" and "} else if" formatting
-            $this->scripts = preg_replace('/\}\s*else\s*(\{|if)/s', '} else \\1', $this->scripts);
+            $this->scripts = preg_replace('/\}\s*else\s*(\{|if)/s', '} else $1', $this->scripts);
 
             // standardize indentation to use tabs
             $this->scripts = str_replace('        ', "\t", $this->scripts);
@@ -1032,6 +1033,17 @@ class quizport_output_hp_6 extends quizport_output_hp {
         global $QUIZPORT;
 
         $substr = substr($str, $start, $length);
+
+        // ensure StartUp is not called more than once
+        if ($pos = strpos($substr, '{')) {
+            $insert = "\n"
+                ."	if (window.StartedUp) {\n"
+                ."		return;\n"
+                ."	}\n"
+                ."	window.StartedUp = true;"
+            ;
+            $substr = substr_replace($substr, $insert, $pos+1, 0);
+        }
 
         // if necessary, fix drag area for JMatch or JMix drag-and-drop
         $this->fix_js_StartUp_DragAndDrop($substr);
