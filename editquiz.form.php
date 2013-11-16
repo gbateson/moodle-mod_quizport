@@ -158,6 +158,13 @@ class mod_quizport_editquiz_form extends moodleform {
         $mform->disabledIf('stopbutton_text', 'stopbutton_type', 'ne', 'specific');
 
 // Use filters
+        $mform->addElement('selectyesno', 'allowpaste', get_string('allowpaste', 'quizport'));
+        $mform->setType('allowpaste', PARAM_INT);
+        $mform->setDefault('allowpaste', get_user_preferences('quizport_quiz_allowpaste', QUIZPORT_YES));
+        $mform->setHelpButton('allowpaste', array('allowpaste', get_string('allowpaste', 'quizport'), 'quizport'));
+        $mform->setAdvanced('allowpaste');
+
+// Use filters
         $mform->addElement('selectyesno', 'usefilters', get_string('usefilters', 'quizport'));
         $mform->setType('usefilters', PARAM_INT);
         $mform->setDefault('usefilters', get_user_preferences('quizport_quiz_usefilters', QUIZPORT_YES));

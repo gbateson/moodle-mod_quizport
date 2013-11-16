@@ -86,6 +86,7 @@ CREATE TABLE prefix_quizport_quizzes (
     title INTEGER NOT NULL DEFAULT '3',
     stopbutton SMALLINT NOT NULL DEFAULT '0',
     stoptext VARCHAR(255) NOT NULL DEFAULT '',
+    allowpaste SMALLINT NOT NULL DEFAULT '0',
     usefilters SMALLINT NOT NULL DEFAULT '0',
     useglossary SMALLINT NOT NULL DEFAULT '0',
     usemediafilter VARCHAR(255) NOT NULL DEFAULT '',
@@ -158,6 +159,7 @@ CREATE TABLE prefix_quizport_cache (
     id BIGSERIAL PRIMARY KEY,
     quizid BIGINT NOT NULL DEFAULT '0',
     slasharguments VARCHAR(1) NOT NULL DEFAULT '',
+    quizport_bodystyles VARCHAR(8) NOT NULL DEFAULT '',
     quizport_enableobfuscate VARCHAR(1) NOT NULL DEFAULT '',
     quizport_enableswf VARCHAR(1) NOT NULL DEFAULT '',
     name VARCHAR(255) NOT NULL DEFAULT '',
@@ -174,6 +176,7 @@ CREATE TABLE prefix_quizport_cache (
     title INTEGER NOT NULL DEFAULT '3',
     stopbutton SMALLINT NOT NULL DEFAULT '0',
     stoptext VARCHAR(255) NOT NULL DEFAULT '',
+    allowpaste SMALLINT DEFAULT '0',
     usefilters SMALLINT DEFAULT '0',
     useglossary SMALLINT DEFAULT '0',
     usemediafilter VARCHAR(255) NOT NULL DEFAULT '0',
@@ -256,7 +259,7 @@ COMMENT ON TABLE prefix_quizport_strings IS 'strings used in QuizPort questions 
 CREATE INDEX prefix_quizstri_md5_ix ON prefix_quizport_strings (md5key);
 
 ##
-## entries for log_display table, required by print_log (course/lib.php) 
+## entries for log_display table, required by print_log (course/lib.php)
 ## to expand log record "info" field from an id into a QuizPort name
 ##
 INSERT INTO prefix_log_display (module, action, mtable, field) VALUES ('quizport', 'editcolumnlists', 'quizport', 'name');

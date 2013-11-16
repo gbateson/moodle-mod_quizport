@@ -68,7 +68,7 @@ class mod_quizport_editquizzes extends mod_quizport {
                     'sortorder','editquiz','name','sourcefile','sourcetype','setasdefault','selectquiz',
                     'sourcelocation','configlocation','configfile',
                     'outputformat','navigation','title','stopbutton','stoptext',
-                    'usefilters','useglossary','usemediafilter',
+                    'allowpaste','usefilters','useglossary','usemediafilter',
                     'studentfeedback', // 'studentfeedbackurl',
                     'timeopen','timeclose','timelimit',
                     'delay1','delay2','delay3',
@@ -101,7 +101,7 @@ class mod_quizport_editquizzes extends mod_quizport {
                 $columns = array(
                     'sortorder','editquiz','name','setasdefault','selectquiz',
                     'outputformat','navigation','title','stopbutton','stoptext',
-                    'usefilters','useglossary','usemediafilter','studentfeedback'
+                    'allowpaste','usefilters','useglossary','usemediafilter','studentfeedback'
                 );
                 break;
 
@@ -459,6 +459,7 @@ class mod_quizport_editquizzes extends mod_quizport {
                 break;
 
             // yes/no columns
+            case 'allowpaste':
             case 'usefilters':
             case 'useglossary':
             case 'scoreignore':

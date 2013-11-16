@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/quizport/db" VERSION="20111202" COMMENT="XMLDB file for Moodle mod/quizport"
+<XMLDB PATH="mod/quizport/db" VERSION="20131116" COMMENT="XMLDB file for Moodle mod/quizport"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -109,8 +109,9 @@
         <FIELD NAME="navigation" TYPE="int" LENGTH="6" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="the navigation used for quizzes in this QuizPort unit 1 : bar : Moodle navigation bar 2 : frame : Moodle navigation frame 3 : iframe : embedded IFRAME 4 : original : quiz’s original navigation 5 : giveup : a single “Give Up” button 6 : none" PREVIOUS="outputformat" NEXT="title"/>
         <FIELD NAME="title" TYPE="int" LENGTH="6" NOTNULL="true" UNSIGNED="true" DEFAULT="3" SEQUENCE="false" ENUM="false" PREVIOUS="navigation" NEXT="stopbutton"/>
         <FIELD NAME="stopbutton" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="title" NEXT="stoptext"/>
-        <FIELD NAME="stoptext" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="stopbutton" NEXT="usefilters"/>
-        <FIELD NAME="usefilters" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="stoptext" NEXT="useglossary"/>
+        <FIELD NAME="stoptext" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="stopbutton" NEXT="allowpaste"/>
+        <FIELD NAME="allowpaste" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="stoptext" NEXT="usefilters"/>
+        <FIELD NAME="usefilters" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="allowpaste" NEXT="useglossary"/>
         <FIELD NAME="useglossary" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="usefilters" NEXT="usemediafilter"/>
         <FIELD NAME="usemediafilter" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="useglossary" NEXT="studentfeedback"/>
         <FIELD NAME="studentfeedback" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="usemediafilter" NEXT="studentfeedbackurl"/>
@@ -196,8 +197,9 @@
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="quizid"/>
         <FIELD NAME="quizid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="the &quot;id&quot; of the &quot;quizport_quizzes&quot; record to which this cached content is associated" PREVIOUS="id" NEXT="slasharguments"/>
-        <FIELD NAME="slasharguments" TYPE="char" LENGTH="1" NOTNULL="true" SEQUENCE="false" ENUM="false" COMMENT="Moodle's $CFG-&amp;gt;slasharguments setting at the time the cached content was created" PREVIOUS="quizid" NEXT="quizport_enableobfuscate"/>
-        <FIELD NAME="quizport_enableobfuscate" TYPE="char" LENGTH="1" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="slasharguments" NEXT="quizport_enableswf"/>
+        <FIELD NAME="slasharguments" TYPE="char" LENGTH="1" NOTNULL="true" SEQUENCE="false" ENUM="false" COMMENT="Moodle's $CFG-&amp;gt;slasharguments setting at the time the cached content was created" PREVIOUS="quizid" NEXT="quizport_bodystyles"/>
+        <FIELD NAME="quizport_bodystyles" TYPE="char" LENGTH="8" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="slasharguments" NEXT="quizport_enableobfuscate"/>
+        <FIELD NAME="quizport_enableobfuscate" TYPE="char" LENGTH="1" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="quizport_bodystyles" NEXT="quizport_enableswf"/>
         <FIELD NAME="quizport_enableswf" TYPE="char" LENGTH="1" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="quizport_enableobfuscate" NEXT="name"/>
         <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" COMMENT="quiz name at the time the cache was created" PREVIOUS="quizport_enableswf" NEXT="sourcefile"/>
         <FIELD NAME="sourcefile" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" COMMENT="the quiz's &quot;reference&quot; setting at the time the cached content was created" PREVIOUS="name" NEXT="sourcetype"/>
@@ -209,12 +211,13 @@
         <FIELD NAME="configlocation" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="configfile" NEXT="configlastmodified"/>
         <FIELD NAME="configlastmodified" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="configlocation" NEXT="configetag"/>
         <FIELD NAME="configetag" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="configlastmodified" NEXT="navigation"/>
-        <FIELD NAME="navigation" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="the quiz's &quot;navigation&quot; setting when the cached content was created" PREVIOUS="configetag" NEXT="title"/>
-        <FIELD NAME="title" TYPE="int" LENGTH="6" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="navigation" NEXT="stopbutton"/>
-        <FIELD NAME="stopbutton" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="title" NEXT="stoptext"/>
-        <FIELD NAME="stoptext" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="stopbutton" NEXT="usefilters"/>
-        <FIELD NAME="usefilters" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="the quiz's &quot;usefilters&quot; setting when the cached content was created" PREVIOUS="stoptext" NEXT="useglossary"/>
-        <FIELD NAME="useglossary" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="the quiz's &quot;useglossary&quot; setting when the cached content was created" PREVIOUS="usefilters" NEXT="usemediafilter"/>
+        <FIELD NAME="navigation" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="the quiz's &quot;navigation&quot; setting when the cached content was created" PREVIOUS="configetag" NEXT="stopbutton"/>
+        <FIELD NAME="stopbutton" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="navigation" NEXT="title"/>
+        <FIELD NAME="title" TYPE="int" LENGTH="6" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="stopbutton" NEXT="stoptext"/>
+        <FIELD NAME="stoptext" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="title" NEXT="allowpaste"/>
+        <FIELD NAME="allowpaste" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="stoptext" NEXT="usefilters"/>
+        <FIELD NAME="usefilters" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="the quiz's &quot;usefilters&quot; setting when the cached content was created" PREVIOUS="allowpaste" NEXT="useglossary"/>
+        <FIELD NAME="useglossary" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="the quiz's &quot;useglossary&quot; setting when the cached content was created" PREVIOUS="usefilters" NEXT="usemediafilter"/>
         <FIELD NAME="usemediafilter" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="the quiz's &quot;usemediafilter&quot; setting when the cached content was created" PREVIOUS="useglossary" NEXT="studentfeedback"/>
         <FIELD NAME="studentfeedback" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="false" DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="the quiz's &quot;studentfeedback&quot; setting when the cached content was created" PREVIOUS="usemediafilter" NEXT="studentfeedbackurl"/>
         <FIELD NAME="studentfeedbackurl" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" COMMENT="the quiz's &quot;outputformaturl&quot; setting when the cached content was created" PREVIOUS="studentfeedback" NEXT="timelimit"/>

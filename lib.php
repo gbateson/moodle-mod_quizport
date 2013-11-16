@@ -480,7 +480,7 @@ function quizport_preferences_fields($type) {
             'namesource','quizchain',
             // adding / editing a quiz
             'sourcelocation','sourcefile','configfile','configlocation',
-            'outputformat','navigation','title','stopbutton','stoptext','usefilters','useglossary','usemediafilter',
+            'outputformat','navigation','title','stopbutton','stoptext','allowpaste','usefilters','useglossary','usemediafilter',
             'studentfeedback','studentfeedbackurl','timeopen','timeclose','timelimit',
             'delay1','delay2','delay3','password','subnet','allowresume','reviewoptions','attemptlimit',
             'scoremethod','scoreignore','scorelimit','scoreweighting','clickreporting','discarddetails',

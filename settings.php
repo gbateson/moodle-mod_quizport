@@ -5,6 +5,9 @@ if (empty($CFG)) {
     die;
 }
 
+/** Include required files */
+require_once($CFG->dirroot.'/mod/quizport/lib.local.php');
+
 // admin_setting_xxx classes are defined in "lib/adminlib.php"
 // new admin_setting_configcheckbox($name, $visiblename, $description, $defaultsetting);
 
@@ -45,6 +48,17 @@ unset($timezone, $options);
 // enable embedding of swf media objects inquizport quizzes (default=1)
 $settings->add(
     new admin_setting_configcheckbox('quizport_enableswf', get_string('enableswf', 'quizport'), get_string('configenableswf', 'quizport'), 1)
+);
+
+// bodystyles
+$options = array(
+    QUIZPORT_BODYSTYLES_BACKGROUND => get_string('bodystylesbackground', 'quizport'),
+    QUIZPORT_BODYSTYLES_COLOR      => get_string('bodystylescolor',      'quizport'),
+    QUIZPORT_BODYSTYLES_FONT       => get_string('bodystylesfont',       'quizport'),
+    QUIZPORT_BODYSTYLES_MARGIN     => get_string('bodystylesmargin',     'quizport')
+);
+$settings->add(
+    new admin_setting_configmultiselect('quizport_bodystyles', get_string('bodystyles', 'quizport'), get_string('configbodystyles', 'quizport'), array(), $options)
 );
 
 // enable obfuscation of javascript in html files (default=1)

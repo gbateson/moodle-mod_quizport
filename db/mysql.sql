@@ -101,6 +101,7 @@ CREATE TABLE prefix_quizport_quizzes (
   title mediumint(6) unsigned NOT NULL default '3',
   stopbutton tinyint(2) unsigned NOT NULL default '0',
   stoptext varchar(255) NOT NULL default '',
+  allowpaste tinyint(2) unsigned NOT NULL default '0',
   usefilters tinyint(2) unsigned NOT NULL default '0',
   useglossary tinyint(2) unsigned NOT NULL default '0',
   usemediafilter varchar(255) NOT NULL default '',
@@ -182,6 +183,7 @@ CREATE TABLE prefix_quizport_cache (
   id bigint(10) unsigned NOT NULL auto_increment,
   quizid bigint(10) unsigned NOT NULL default '0',
   slasharguments varchar(1) NOT NULL default '',
+  quizport_bodystyles varchar(8) NOT NULL default '',
   quizport_enableobfuscate varchar(1) NOT NULL default '',
   quizport_enableswf varchar(1) NOT NULL default '',
   `name` varchar(255) NOT NULL default '',
@@ -198,8 +200,9 @@ CREATE TABLE prefix_quizport_cache (
   title mediumint(6) unsigned NOT NULL default '3',
   stopbutton tinyint(2) unsigned NOT NULL default '0',
   stoptext varchar(255) NOT NULL default '',
-  usefilters smallint(4) unsigned default '0',
-  useglossary smallint(4) unsigned default '0',
+  allowpaste smallint(2) unsigned default '0',
+  usefilters smallint(2) unsigned default '0',
+  useglossary smallint(2) unsigned default '0',
   usemediafilter varchar(255) NOT NULL default '0',
   studentfeedback smallint(4) default '0',
   studentfeedbackurl varchar(255) NOT NULL default '',
@@ -298,7 +301,7 @@ CREATE TABLE prefix_quizport_strings (
 ALTER TABLE prefix_quizport_strings ADD INDEX prefix_quizstri_md5_ix (md5key);
 
 ##
-## entries for log_display table, required by print_log (course/lib.php) 
+## entries for log_display table, required by print_log (course/lib.php)
 ## to expand log record "info" field from an id into a QuizPort name
 ##
 INSERT INTO prefix_log_display (module, action, mtable, field) VALUES ('quizport', 'editcolumnlists', 'quizport', 'name');

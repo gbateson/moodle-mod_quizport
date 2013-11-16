@@ -41,16 +41,16 @@ function xmldb_quizport_upgrade($oldversion=0) {
     if ($result && $oldversion < $newversion) {
         $table = new $xmldb_table_class('quizport_cache');
         $fields = array(
-            // $thisfield => $afterfield
+            // $thisfield => $previousfield
             'sourcelastmodified' => 'sourcelocation',
             'sourceetag' => 'sourcelastmodified',
             'configlastmodified' => 'configlocation',
             'configetag' => 'configlastmodified'
         );
-        foreach($fields as $thisfield => $afterfield) {
+        foreach($fields as $thisfield => $previousfield) {
             $field = new $xmldb_field_class($thisfield);
             if (! $dbman->field_exists($table, $field)) {
-                xmldb_quizport_field_set_attributes($field, XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, $afterfield);
+                xmldb_quizport_field_set_attributes($field, XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, $previousfield);
                 $dbman->add_field($table, $field);
             }
         }
@@ -973,10 +973,35 @@ function xmldb_quizport_upgrade($oldversion=0) {
         upgrade_mod_savepoint($result, "$newversion", 'quizport');
     }
 
-    $newversion = 2008040147;
+    $newversion = 2008040148;
     if ($result && $oldversion < $newversion) {
-        $empty_cache = true;
+
+        // display all bodystyles
+        set_config('quizport_bodystyles', '1,2,4,8');
+
+        $table = new $xmldb_table_class('quizport_cache');
+        $field = new $xmldb_field_class('quizport_bodystyles');
+        if (! $dbman->field_exists($table, $field)) {
+            xmldb_quizport_field_set_attributes($field, XMLDB_TYPE_CHAR, '8', null, XMLDB_NOTNULL, null, null, 'slasharguments');
+            $dbman->add_field($table, $field);
+        }
+
+        $table = new $xmldb_table_class('quizport_cache');
+        $field = new $xmldb_field_class('allowpaste');
+        if (! $dbman->field_exists($table, $field)) {
+            xmldb_quizport_field_set_attributes($field, XMLDB_TYPE_INTEGER, '2', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'stoptext');
+            $dbman->add_field($table, $field);
+        }
+
+        $table = new $xmldb_table_class('quizport_quizzes');
+        $field = new $xmldb_field_class('allowpaste');
+        if (! $dbman->field_exists($table, $field)) {
+            xmldb_quizport_field_set_attributes($field, XMLDB_TYPE_INTEGER, '2', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'stoptext');
+            $dbman->add_field($table, $field);
+        }
+
         upgrade_mod_savepoint($result, "$newversion", 'quizport');
+        $empty_cache = true;
     }
 
     if ($unset_strings) {
