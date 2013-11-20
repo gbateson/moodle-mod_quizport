@@ -1002,7 +1002,7 @@ function xmldb_quizport_upgrade($oldversion=0) {
         upgrade_mod_savepoint($result, "$newversion", 'quizport');
     }
 
-    $newversion = 2008040149;
+    $newversion = 2008040150;
     if ($result && $oldversion < $newversion) {
         $empty_cache = true;
         upgrade_mod_savepoint($result, "$newversion", 'quizport');
