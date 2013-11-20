@@ -1353,7 +1353,7 @@ class quizport_output_hp_6 extends quizport_output_hp {
         // JMatch : AllDone || TimeOver
         // JMix : AllDone || TimeOver (in the CheckAnswer function)
         // JQuiz : AllDone (in the CheckFinished function)
-        return '/\s*if \(\((\w+) == true\)\|\|\(\w+ == true\)\)({).*?}\s*/s';
+        return '/\s*if *\(\((\w+) *== *true\) *\|\| *\(\w+ *== *true\)\) *({).*?}\s*/s';
     }
 
     function get_stop_function_replace() {
