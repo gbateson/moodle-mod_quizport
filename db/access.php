@@ -1,4 +1,15 @@
-<?php // $Id$
+<?php
+
+if (empty($GLOBALS['CFG'])) {
+    die;
+}
+if (empty($CFG)) {
+    global $CFG;
+}
+if (empty($CFG->majorrelease)) {
+    $CFG->majorrelease = floatval($CFG->release);
+}
+
 //
 // Capability definitions for the QuizPort module
 // ==============================================
@@ -111,4 +122,74 @@ $mod_quizport_capabilities = array(
         'legacy' => array()
     )
 );
+
+if ($CFG->majorrelease >= 2.0) {
+    // Moodle >= 2.0
+
+    // rename "mod_quizport_capabilities" to "capabilities"
+    $capabilities = $mod_quizport_capabilities;
+    unset($mod_quizport_capabilities);
+
+    // "addinstance" capability is required in Moodle 2.x
+    // but we intentionally disable it for all roles
+    $capabilities['mod/quizport:addinstance'] = array(
+        'riskbitmask' => RISK_SPAM,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'legacy' => array() // i.e. disabled
+    );
+
+    // rename all "admin" capabilities to "manager"
+    foreach (array_keys($capabilities) as $name) {
+        if (! array_key_exists('legacy', $capabilities[$name])) {
+            continue;
+        }
+        if (! array_key_exists('admin', $capabilities[$name]['legacy'])) {
+            continue;
+        }
+        $capabilities[$name]['legacy']['manager'] = $capabilities[$name]['legacy']['admin'];
+        unset($capabilities[$name]['legacy']['admin']);
+    }
+}
+
+if ($CFG->majorrelease <= 1.9 && empty($CFG->mod_quizport_version)) {
+    // Moodle 1.7 - 1.9 install
+
+    // we are supposed to add these records with a <STATEMENTS> block in install.xml
+    // <STATEMENTS>
+    //   <STATEMENT NAME="insert log_display" TYPE="insert" TABLE="log_display" COMMENT="Initial insert of records on table log_display">
+    //     <SENTENCES>
+    //       <SENTENCE TEXT="(module, action, mtable, field) VALUES ('quizport', 'editcolumnlists', 'quizport', 'name')" />
+    //       <SENTENCE TEXT="(module, action, mtable, field) VALUES ('quizport', 'editcondition', 'quizport', 'name')" />
+    //       <SENTENCE TEXT="(module, action, mtable, field) VALUES ('quizport', 'editquiz', 'quizport', 'name')" />
+    //       <SENTENCE TEXT="(module, action, mtable, field) VALUES ('quizport', 'editquizzes', 'quizport', 'name')" />
+    //       <SENTENCE TEXT="(module, action, mtable, field) VALUES ('quizport', 'report', 'quizport', 'name')" />
+    //       <SENTENCE TEXT="(module, action, mtable, field) VALUES ('quizport', 'submit', 'quizport', 'name')" />
+    //       <SENTENCE TEXT="(module, action, mtable, field) VALUES ('quizport', 'view', 'quizport', 'name')" />
+    //     </SENTENCES>
+    //   </STATEMENT>
+    // </STATEMENTS>
+
+    // However, the above XML generates a warning on Moodle 2.x,
+    // so we do this workaround ...
+
+    $actions = array(
+        'editcolumnlists', 'editcondition', 'editquiz', 'editquizzes', 'report', 'submit', 'view'
+    );
+    foreach($actions as $action) {
+        $record = (object)array(
+            'module' => 'quizport',
+            'action' => $action,
+            'mtable' => 'quizport',
+            'field'  => 'name'
+        );
+        if ($record->id = get_field('log_display', 'id', 'module', 'quizport', 'action', $action)) {
+            update_record('log_display', $record);
+        } else {
+            insert_record('log_display', $record);
+        }
+    }
+
+    // on Moodle <= 1.6 the log_display records will be installed from mysql.sql and postgres7.sql
+}
 ?>

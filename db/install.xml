@@ -322,17 +322,4 @@
       </INDEXES>
     </TABLE>
   </TABLES>
-  <STATEMENTS>
-    <STATEMENT NAME="insert log_display" TYPE="insert" TABLE="log_display" COMMENT="Initial insert of records on table log_display">
-      <SENTENCES>
-        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('quizport', 'editcolumnlists', 'quizport', 'name')" />
-        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('quizport', 'editcondition', 'quizport', 'name')" />
-        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('quizport', 'editquiz', 'quizport', 'name')" />
-        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('quizport', 'editquizzes', 'quizport', 'name')" />
-        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('quizport', 'report', 'quizport', 'name')" />
-        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('quizport', 'submit', 'quizport', 'name')" />
-        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('quizport', 'view', 'quizport', 'name')" />
-      </SENTENCES>
-    </STATEMENT>
-  </STATEMENTS>
 </XMLDB>

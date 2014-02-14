@@ -6,6 +6,7 @@ $string['pluginadministration'] = 'QuizPort administration';
 $string['pluginname'] = 'QuizPort';
 
 // roles strings
+$string['quizport:addinstance'] = 'Add a new QuizPort activity';
 $string['quizport:attempt'] = 'Attempt quizzes';
 $string['quizport:deleteattempts'] = 'Delete quiz attempts';
 $string['quizport:grade'] = 'Grade quizzes manually';
