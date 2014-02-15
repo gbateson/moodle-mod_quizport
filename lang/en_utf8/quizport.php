@@ -363,6 +363,7 @@ $string['regradeselected'] = 'Regrade selected';
 $string['removegradeitem'] = 'Remove grade item';
 $string['reorderquizzes'] = 'Reorder quizzes';
 $string['reportclick'] = 'Click trail report';
+$string['resetcapabilities'] = 'Reset capabilities';
 $string['resume'] = 'Resume';
 $string['reviewafterattempt'] = 'Allow review after attempt';
 $string['reviewafterclose'] = 'Allow review after quiz closes';

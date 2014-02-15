@@ -68,29 +68,29 @@ if ($CFG->majorrelease >= 2.0) {
 
             $mform =&$this->_form;
 
-//-----------------------------------------------------------------------------------------------
+            //-----------------------------------------------------------------------------------
             $mform->addElement('header', 'general', get_string('general', 'form'));
-//-----------------------------------------------------------------------------------------------
+            //-----------------------------------------------------------------------------------
 
-// Name
+            // Name
             quizport_add_name_group($mform, 'unit', $is_add, '', get_string('unitname', 'quizport'));
 
-// Source file
+            // Source file
             quizport_add_file_group($mform, 'unit', 'source', $is_add);
 
-// Configuration file
+            // Configuration file
             quizport_add_file_group($mform, 'unit', 'config', $is_add);
             $mform->setAdvanced('config_elements');
 
-// Add chain
+            // Add chain
             quizport_add_quizchain($mform, 'unit', $is_add);
             quizport_add_name_group($mform, 'unit', $is_add, 'quizname', get_string('quiznames', 'quizport'));
 
-//-----------------------------------------------------------------------------------------------
+            //-----------------------------------------------------------------------------------
             $mform->addElement('header', 'displayhdr', get_string('display', 'form'));
-//-----------------------------------------------------------------------------------------------
+            //-----------------------------------------------------------------------------------
 
-// Same window or new window (=popup) ?
+            // Same window or new window (=popup) ?
             $options = array(
                 0 => get_string('pagewindow', 'resource'),
                 1 => get_string('newwindow', 'resource')
@@ -100,7 +100,7 @@ if ($CFG->majorrelease >= 2.0) {
             $mform->setDefault('showpopup', get_user_preferences('quizport_unit_showpopup', !empty($CFG->quizport_showpopup)));
             $mform->setHelpButton('showpopup', array('showpopup', get_string('display', 'resource'), 'quizport'));
 
-// New window options
+            // New window options
             $window_options = get_window_options();
 
             $elements = array();
@@ -149,10 +149,10 @@ if ($CFG->majorrelease >= 2.0) {
                 $mform->setDefault($option, get_user_preferences('quizport_unit_popup_'.$option, $default));
             }
 
-// Entry page
+            // Entry page
             quizport_add_page_text($mform, 'entry', $is_add, QUIZPORT_NO);
 
-// Entry page options
+            // Entry page options
             $elements = array();
             $page_options = get_page_options();
             foreach (array_keys($page_options['entry']) as $name) {
@@ -164,10 +164,10 @@ if ($CFG->majorrelease >= 2.0) {
             $mform->setAdvanced('entryoptions_elements');
 
 
-// Exit page
+            // Exit page
             quizport_add_page_text($mform, 'exit', $is_add, QUIZPORT_YES);
 
-// Exit page feedback
+            // Exit page feedback
             $elements = array();
             $elements[] = $mform->createElement('checkbox', 'exit_title', '', get_string('entry_title', 'quizport'));
             $elements[] = $mform->createElement('checkbox', 'exit_encouragement', '', get_string('exit_encouragement', 'quizport'));
@@ -178,7 +178,7 @@ if ($CFG->majorrelease >= 2.0) {
             $mform->disabledIf('exit_feedback', 'exitpage', 'eq', 0);
             $mform->setAdvanced('exit_feedback');
 
-// Exit page links
+            // Exit page links
             $elements = array();
             $elements[] = $mform->createElement('checkbox', 'exit_retry', '', get_string('exit_retry', 'quizport').': '.get_string('exit_retry_text', 'quizport'));
             $elements[] = $mform->createElement('checkbox', 'exit_index', '', get_string('exit_index', 'quizport').': '.get_string('exit_index_text', 'quizport'));
@@ -189,40 +189,40 @@ if ($CFG->majorrelease >= 2.0) {
             $mform->disabledIf('exit_links', 'exitpage', 'eq', 0);
             $mform->setAdvanced('exit_links');
 
-// Previous and Next activity
+            // Previous and Next activity
             quizport_add_activity_list($mform, 'entry');
             quizport_add_activity_list($mform, 'exit');
 
-//-----------------------------------------------------------------------------------------------
+            //-----------------------------------------------------------------------------------
             $mform->addElement('header', 'accesscontrolhdr', get_string('accesscontrol', 'lesson'));
-//-----------------------------------------------------------------------------------------------
+            //-----------------------------------------------------------------------------------
 
-// Open time
+            // Open time
             $mform->addElement('date_time_selector', 'timeopen', get_string('timeopen', 'quizport'), array('optional'=>true));
             $mform->setHelpButton('timeopen', array('timeopen', get_string('timeopen', 'quizport'), 'quiz'));
             //$mform->setAdvanced('timeopen');
 
-// Close time
+            // Close time
             $mform->addElement('date_time_selector', 'timeclose', get_string('timeclose', 'quizport'), array('optional'=>true));
             $mform->setHelpButton('timeclose', array('timeopen', get_string('timeclose', 'quizport'), 'quiz'));
             //$mform->setAdvanced('timeclose');
 
-// Time limit
+            // Time limit
             quizport_add_timer_selector($mform, 'timelimit', get_string('timelimitsummary', 'quizport'));
 
-//Delay after attempt 1
+            //Delay after attempt 1
             quizport_add_timer_selector($mform, 'delay1', get_string('delay1summary', 'quizport'));
 
-//Delay after attempt 2
+            //Delay after attempt 2
             quizport_add_timer_selector($mform, 'delay2', get_string('delay2summary', 'quizport'));
 
-// Attempt limit
+            // Attempt limit
             quizport_add_attemptlimit_selector($mform, 'unit');
 
-// Allow resume ?
+            // Allow resume ?
             quizport_add_allowresume($mform, 'unit');
 
-// Allow free access
+            // Allow free access
             $optgroups = array(
                 get_string('no') => array(0 => get_string('no')),
             );
@@ -247,30 +247,30 @@ if ($CFG->majorrelease >= 2.0) {
             $mform->setHelpButton('allowfreeaccess', array('allowfreeaccess', get_string('allowfreeaccess', 'quizport'), 'quizport'));
             $mform->setAdvanced('allowfreeaccess');
 
-// Password
-// Subnet
+            // Password
+            // Subnet
             quizport_add_password_and_subnet($mform, 'unit');
 
-//-----------------------------------------------------------------------------------------------
+            //-----------------------------------------------------------------------------------
             $mform->addElement('header', 'assessmenthdr', get_string('assessment', 'quizport'));
-//-----------------------------------------------------------------------------------------------
+            //-----------------------------------------------------------------------------------
 
-// Unit grading method
+            // Unit grading method
             quizport_add_grademethod_selector($mform, 'unit', 'grademethod', QUIZPORT_GRADEMETHOD_HIGHEST, false);
 
-// Grade ignore
+            // Grade ignore
             quizport_add_gradeignore($mform, 'unit', 'grade');
 
-// Maximum grade
+            // Maximum grade
             quizport_add_grades_selector($mform, 'unit');
 
-// Grade weighting
+            // Grade weighting
             quizport_add_weighting_selector($mform, 'unit');
 
-// Unit attempt grading method
+            // Unit attempt grading method
             quizport_add_grademethod_selector($mform, 'unitattempt', 'attemptgrademethod', QUIZPORT_GRADEMETHOD_TOTAL, true);
 
-// Remove grade item
+            // Remove grade item
             if ($CFG->majorrelease<1.9 || empty($this->_instance) || ! $DB->record_exists('grade_items', array('itemtype'=>'mod', 'itemmodule'=>'quizport', 'iteminstance'=>$this->_instance))) {
                 // no grade item
                 $mform->addElement('hidden', 'removegradeitem', 0);
@@ -285,9 +285,9 @@ if ($CFG->majorrelease >= 2.0) {
                 $mform->disabledIf('removegradeitem', 'gradeweighting', 'selected', 0);
             }
 
-//-----------------------------------------------------------------------------------------------
-// standard submit buttons, visibility and availability settings
-//-----------------------------------------------------------------------------------------------
+            //-----------------------------------------------------------------------------------
+            // standard submit buttons, visibility and availability settings
+            //-----------------------------------------------------------------------------------
             // see  http://docs.moodle.org/en/Groups  and  http://docs.moodle.org/en/Groupings
             $features = array(
                 'groups'=>false, // not meaningful for QuizPorts
@@ -309,9 +309,9 @@ if ($CFG->majorrelease >= 2.0) {
             $this->standard_coursemodule_elements($features);
             $this->add_action_buttons(true, $submitlabel, $submit2label);
 
-//-----------------------------------------------------------------------------------------------
-// adjust vertical white space on some elements
-//-----------------------------------------------------------------------------------------------
+            //-----------------------------------------------------------------------------------
+            // adjust vertical white space on some elements
+            //-----------------------------------------------------------------------------------
             $src = $CFG->wwwroot.'/mod/quizport/mod_form.js';
             if (method_exists($PAGE, 'get_requires')) {
                 // Moodle >= 2.0

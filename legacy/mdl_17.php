@@ -25,6 +25,21 @@ if (! function_exists('get_course_section')) {
     }
 }
 
+if (! function_exists('right_to_left')) {
+    // copy of "right_to_left()" (lib/weblib.php)
+    function right_to_left() {
+        static $result;
+        if (! isset($result)) {
+            if (get_string('thisdirection')=='rtl') {
+                $result = true;
+            } else {
+                $result = false;
+            }
+        }
+        return $result;
+    }
+}
+
 if (! function_exists('editorhelpbutton')) {
     // copy of "editorhelpbutton()" (lib/weblib.php)
     function editorhelpbutton(){
@@ -255,6 +270,99 @@ if (! function_exists('addslashes_js')) {
                 break;
         }
         return $var;
+    }
+}
+
+/**
+ * Javascript related defines
+ */
+if (! defined('REQUIREJS_BEFOREHEADER')) {
+    define('REQUIREJS_BEFOREHEADER', 0);
+}
+if (! defined('REQUIREJS_INHEADER')) {
+    define('REQUIREJS_INHEADER',     1);
+}
+if (! defined('REQUIREJS_AFTERHEADER')) {
+    define('REQUIREJS_AFTERHEADER',  2);
+}
+
+if (! function_exists('require_js')) {
+    // copy of "require_js()" (lib/weblib.php)
+    function require_js($lib,$extracthtml=0) {
+        global $CFG;
+        static $loadlibs = array();
+
+        static $state = REQUIREJS_BEFOREHEADER;
+        static $latecode = '';
+
+        if (!empty($lib)) {
+            // Add the lib to the list of libs to be loaded, if it isn't already
+            // in the list.
+            if (is_array($lib)) {
+                foreach($lib as $singlelib) {
+                    require_js($singlelib);
+                }
+            } else {
+                require_once $CFG->legacylibdir.'/ajax/ajaxlib.php';
+                $libpath = ajax_get_lib($lib);
+                if (array_search($libpath, $loadlibs) === false) {
+                    $loadlibs[] = $libpath;
+
+                    // For state other than 0 we need to take action as well as just
+                    // adding it to loadlibs
+                    if($state != REQUIREJS_BEFOREHEADER) {
+                        // Get the script statement for this library
+                        $scriptstatement=get_require_js_code(array($libpath));
+
+                        if($state == REQUIREJS_AFTERHEADER) {
+                            // After the header, print it immediately
+                            print $scriptstatement;
+                        } else {
+                            // Haven't finished the header yet. Add it after the
+                            // header
+                            $latecode .= $scriptstatement;
+                        }
+                    }
+                }
+            }
+        } else if($extracthtml==1) {
+            if($state !== REQUIREJS_BEFOREHEADER) {
+                debugging('Incorrect state in require_js (expected BEFOREHEADER): be careful not to call with empty $lib (except in print_header)');
+            } else {
+                $state = REQUIREJS_INHEADER;
+            }
+
+            return get_require_js_code($loadlibs);
+        } else if($extracthtml==2) {
+            if($state !== REQUIREJS_INHEADER) {
+                debugging('Incorrect state in require_js (expected INHEADER): be careful not to call with empty $lib (except in print_header)');
+                return '';
+            } else {
+                $state = REQUIREJS_AFTERHEADER;
+                return $latecode;
+            }
+        } else {
+            debugging('Unexpected value for $extracthtml');
+        }
+    }
+}
+
+if (! function_exists('get_require_js_code')) {
+    // copy of "get_require_js_code()" (lib/weblib.php)
+    function get_require_js_code($loadlibs) {
+        global $CFG;
+        // Return the html needed to load the JavaScript files defined in
+        // our list of libs to be loaded.
+        $output = '';
+        foreach ($loadlibs as $loadlib) {
+            $output .= '<script type="text/javascript" src="'.$loadlib.'"></script>'."\n";
+            if ($loadlib == $CFG->wwwroot.'/lib/yui/logger/logger-min.js') {
+                // Special case, we need the CSS too.
+                $wwwroot = str_replace($CFG->dirroot, $CFG->wwwroot, $CFG->legacylibdir);
+                $output .= '<link type="text/css" rel="stylesheet" href="'.$wwwroot.'/yui/logger/assets/logger.css" />'."\n";
+            }
+        }
+        return $output;
     }
 }
 

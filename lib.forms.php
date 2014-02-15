@@ -16,14 +16,14 @@ if (empty($CFG)) {
 require_once($CFG->dirroot.'/mod/quizport/legacy.php');
 
 // get the moodleform class
-if ($CFG->majorrelease<=1.6) {
-    // Moodle 1.6 and earlier
+if ($CFG->majorrelease<=1.7) {
+    // Moodle 1.7 and earlier
     if (strpos(ini_get('include_path'), $CFG->legacylibdir.'/pear' )===false) {
         ini_set('include_path', $CFG->legacylibdir.'/pear' . PATH_SEPARATOR . ini_get('include_path'));
     }
     require_once($CFG->legacylibdir.'/formslib.php');
 } else {
-    // Moodle 1.7 and later
+    // Moodle 1.8 and later
     require_once($CFG->libdir.'/formslib.php');
 }
 
