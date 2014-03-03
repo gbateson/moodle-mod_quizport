@@ -6,8 +6,8 @@
 if (! isset($module)) {
     $module = new stdClass();
 }
-$module->version  = 2008040152;  // release date of this version
-$module->release  = 'v1.0.52';   // human-friendly version name (used in mod/quizport/lib.php)
+$module->version  = 2008040153;  // release date of this version
+$module->release  = 'v1.0.53';   // human-friendly version name (used in mod/quizport/lib.php)
 $module->cron     = 60;          // period for cron to check this module (secs)
 
 if (defined('MATURITY_STABLE')) {
