@@ -28,7 +28,6 @@ function xmldb_quizport_upgrade($oldversion=0) {
         $xmldb_table_class = 'xmldb_table';
         $xmldb_field_class = 'xmldb_field';
     }
-    $LIKE = $DB->sql_ilike();
 
     // check the indexes are all in order
     $newversion = 2008033101;

@@ -2567,6 +2567,7 @@ function quizport_supports($feature) {
         case FEATURE_GRADE_HAS_GRADE;
         case FEATURE_GROUPINGS:
         case FEATURE_GROUPMEMBERSONLY:
+        case FEATURE_BACKUP_MOODLE2:
             return true;
         //case FEATURE_GROUPS:
         //case FEATURE_GRADE_OUTCOMES:
