@@ -5,7 +5,7 @@
 // standardize Moodle API (in particular we need $DB)
 require_once($CFG->dirroot.'/mod/quizport/legacy.php');
 
-function xmldb_quizport_upgrade($oldversion=0) {
+function xmldb_quizport_upgrade($oldversion=0, $module=null) {
 
     global $CFG, $DB, $THEME;
     $dbman = $DB->get_manager();
@@ -27,6 +27,16 @@ function xmldb_quizport_upgrade($oldversion=0) {
         // Moodle 2.0
         $xmldb_table_class = 'xmldb_table';
         $xmldb_field_class = 'xmldb_field';
+    }
+
+    if (function_exists('rs_fetch_next_record')) {
+        // Moodle <= 1.9
+        $next = 'rs_fetch_next_record';
+        $close = 'Close';
+    } else {
+        // Moodle >= 2.0
+        $next = 'next';
+        $close = 'close';
     }
 
     // check the indexes are all in order
@@ -760,12 +770,16 @@ function xmldb_quizport_upgrade($oldversion=0) {
         $debug = $DB->get_debug();
         $DB->set_debug(false);
 
-        $tables = '{quizport_unit_attempts} qua';
-        $select = "qua.grade=99";
+        $select = '*';
+        $from   = '{quizport_unit_attempts} qua';
+        $where  = "qua.grade=99";
 
-        $count = $DB->count_records_sql("SELECT COUNT('x') FROM $tables WHERE $select");
-        if ($rs = $DB->get_recordset_sql("SELECT * FROM $tables WHERE $select")) {
-
+        if ($count = $DB->count_records_sql("SELECT COUNT('x') FROM $from WHERE $where")) {
+            $rs = $DB->get_recordset_sql("SELECT $select FROM $from WHERE $where");
+        } else {
+            $rs = false;
+        }
+        if ($rs) {
             $bar = new progress_bar('quizportupgradegrades', 500, true);
             $i=0;
             $strupdating = get_string('updatinggrades', 'quizport');
@@ -775,11 +789,6 @@ function xmldb_quizport_upgrade($oldversion=0) {
             $quizports = array();
             $tables = '{quizport_quizzes} qq RIGHT JOIN {quizport_quiz_scores} qqs ON qqs.quizid=qq.id';
 
-            if ($CFG->majorrelease<=1.9) {
-                $next = 'rs_fetch_next_record';
-            } else {
-                $next = 'next';
-            }
             while ($unitattempt = $next($rs)) {
                 if (($i % 1000) == 0) {
                     upgrade_set_timeout(60 * 5); // another 5 minutes
@@ -819,11 +828,7 @@ function xmldb_quizport_upgrade($oldversion=0) {
                 $i++;
                 $bar->update($i, $count, $strupdating.": ($i/$count)");
             }
-            if ($CFG->majorrelease<=1.9) {
-                $rs->Close(); // Moodle 1.x
-            } else {
-                $rs->close(); // Moodle 2.x
-            }
+            $rs->$close();
         }
 
         // restore debug setting
@@ -1021,6 +1026,731 @@ function xmldb_quizport_upgrade($oldversion=0) {
         $DB->delete_records('quizport_cache');
     }
 
+    // finish here for Moodle 1.x or Moodle 2.x without TaskChain
+    if (empty($module) || $module->version <= 2010000000) {
+        return $result;
+    }
+
+    //===== 2.0 upgrade line ======//
+
+    $newversion = 2014050158;
+    if ($result && $oldversion < $newversion) {
+
+        ///////////////////////////////////////
+        /// Convert QuizPorts to TaskChains ///
+        ///////////////////////////////////////
+
+        // add DB fields to store "new" ids
+        // i.e. ids of corresponding TaskChain record
+        $tables = array(
+            'quizport' => array('taskchainid'),
+            'quizport_units' => array('chainid'),
+            'quizport_quizzes' => array('taskid'),
+            'quizport_strings' => array('newid'),
+            'quizport_questions' => array('newid'),
+            'quizport_responses' => array('newid'),
+            'quizport_quiz_attempts' => array('newid'),
+        );
+        foreach ($tables as $table => $fields) {
+            $table = new $xmldb_table_class($table);
+            foreach ($fields as $field) {
+                    $field = new $xmldb_field_class($field);
+                    if (! $dbman->field_exists($table, $field)) {
+                        xmldb_quizport_field_set_attributes($field, XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'id');
+                        $dbman->add_field($table, $field);
+                    }
+            }
+        }
+
+        ///////////////////////////////////////////////////
+        // convert QuizPort (units) to TaskChain (chains)
+        ///////////////////////////////////////////////////
+
+        // store ids of modified courses
+        $courseids = array();
+
+        $quizportmoduleid = $DB->get_field('modules', 'id', array('name' => 'quizport'));
+        $taskchainmoduleid = $DB->get_field('modules', 'id', array('name' => 'taskchain'));
+
+        $select = 'qu.*, q.id AS quizportid, q.course, q.name, q.timecreated, q.timemodified';
+        $from   = '{quizport_units} qu JOIN {quizport} q ON qu.parentid = q.id';
+        $where  = 'qu.parenttype = 0 AND q.taskchainid = 0';
+
+        if ($count = $DB->count_records_sql("SELECT COUNT('x') FROM $from WHERE $where")) {
+            $rs = $DB->get_recordset_sql("SELECT $select FROM $from WHERE $where");
+        } else {
+            $rs = false;
+        }
+        if ($rs) {
+            $bar = new progress_bar('convertunits', 500, true);
+            $i=0;
+            $strupdating = get_string('convertingunits', 'quizport');
+            $bar->update($i, $count, $strupdating.": ($i/$count)");
+
+            $taskchain_columns = $DB->get_columns('taskchain');
+            $chain_columns = $DB->get_columns('taskchain_chains');
+
+            foreach ($rs as $unit) {
+                if (($i % 1000) == 0) {
+                    upgrade_set_timeout(60 * 5); // another 5 minutes
+                }
+                $unit = (object)$unit;
+                if ($taskchain = xmldb_quizport_convert_record('taskchain', $taskchain_columns, $unit)) {
+                    $DB->set_field('quizport', 'taskchainid', $taskchain->id, array('id' => $unit->quizportid));
+
+                    // update course modules record
+                    $params = array('module' => $quizportmoduleid, 'instance' => $unit->quizportid);
+                    if ($cm = $DB->get_record('course_modules', $params)) {
+                        $cm->module = $taskchainmoduleid;
+                        $cm->instance = $taskchain->id;
+                        $DB->update_record('course_modules', $cm);
+                    }
+
+                    // update grade_items records
+                    $params = array('itemmodule' => 'quizport', 'iteminstance' => $unit->quizportid);
+                    if ($grade_items = $DB->get_records('grade_items', $params)) {
+                        foreach ($grade_items as $grade_item) {
+                            $grade_item->itemmodule = 'taskchain';
+                            $grade_item->iteminstance = $taskchain->id;
+                            $DB->update_record('grade_items', $grade_item);
+                        }
+                    }
+                    unset($grade_items);
+
+                    // mark this course as having been modified
+                    $courseids[$taskchain->course] = true;
+
+                    if ($chain = xmldb_quizport_convert_record('taskchain_chains', $chain_columns, $unit, array('parentid' => $taskchain->id))) {
+                        $DB->set_field('quizport_units', 'chainid', $chain->id, array('id' => $unit->id));
+                    }
+                }
+                $i++;
+                $bar->update($i, $count, $strupdating.": ($i/$count)");
+            }
+            $rs->close();
+        }
+
+        ///////////////////////////////////////////////////
+        // convert QuizPort quizzes to TaskChain tasks
+        ///////////////////////////////////////////////////
+
+        $select = 'qq.*, qu.chainid, q.id AS quizportid, q.taskchainid, q.course AS courseid, m.id AS cmid';
+        $from   = '{quizport_quizzes} qq '.
+                  'JOIN {quizport_units} qu ON qq.unitid = qu.id '.
+                  'JOIN {quizport} q ON qu.parentid = q.id '.
+                  'JOIN {course_modules} m ON q.taskchainid = m.instance AND m.module = '.$taskchainmoduleid;
+        $where  = 'qq.taskid = 0 AND qu.chainid > 0 AND qu.parenttype = 0';
+        $order  = 'q.course, qq.unitid, qq.sortorder';
+
+        if ($count = $DB->count_records_sql("SELECT COUNT('x') FROM $from WHERE $where")) {
+            $rs = $DB->get_recordset_sql("SELECT $select FROM $from WHERE $where ORDER BY $order");
+        } else {
+            $rs = false;
+        }
+        if ($rs) {
+            $bar = new progress_bar('convertquizzes', 500, true);
+            $i=0;
+            $strupdating = get_string('convertingquizzes', 'quizport');
+            $bar->update($i, $count, $strupdating.": ($i/$count)");
+
+            // cache info on columns in "taskchain_tasks" table
+            $task_columns = $DB->get_columns('taskchain_tasks');
+
+            // get file storage object
+            $fs = get_file_storage();
+
+            if (class_exists('context_course')) {
+                $sitecontext = context_course::instance(SITEID);
+            } else {
+                $sitecontext = get_context_instance(CONTEXT_COURSE, SITEID);
+            }
+
+            $coursecontext = null;
+            $modulecontext = null;
+            foreach ($rs as $quiz) {
+                if (($i % 1000) == 0) {
+                    upgrade_set_timeout(60 * 5); // another 5 minutes
+                }
+                $quiz = (object)$quiz;
+                if ($quiz->usemedialfilter=='quizport') {
+                    $quiz->usemedialfilter = 'taskchain';
+                }
+                if ($task = xmldb_quizport_convert_record('taskchain_tasks', $task_columns, $quiz)) {
+                    $DB->set_field('quizport_quizzes', 'taskid', $task->id, array('id' => $quiz->id));
+
+                    // get course context for this $quiz/$task
+                    if ($coursecontext===null || $coursecontext->instanceid != $quiz->courseid) {
+                        if (class_exists('context_course')) {
+                            $coursecontext = context_course::instance($quiz->courseid);
+                        } else {
+                            $coursecontext = get_context_instance(CONTEXT_COURSE, $quiz->courseid);
+                        }
+                    }
+
+                    // get module context for this $quiz/$task
+                    if ($modulecontext===null || $modulecontext->instanceid != $quiz->cmid) {
+                        if (class_exists('context_module')) {
+                            $modulecontext = context_module::instance($quiz->cmid);
+                        } else {
+                            $modulecontext = get_context_instance(CONTEXT_MODULE, $quiz->cmid);
+                        }
+                    }
+
+                    // migrate source/config file to Moodle 2.x file storage
+                    $types = array('source', 'config');
+                    foreach ($types as $type) {
+
+                        $filearea = $type.'file';
+                        $location = $type.'location';
+
+                        if (empty($task->$filearea)) {
+                            continue;
+                        }
+
+                        if (preg_match('/^https?:\/\//i', $task->$filearea)) {
+                            $url = $task->$filearea;
+                            $path = parse_url($url, PHP_URL_PATH);
+                        } else {
+                            $url = '';
+                            $path = $task->$filearea;
+                        }
+                        $path = clean_param($path, PARAM_PATH);
+
+                        // this information should be enough to access the file
+                        // if it has been migrated into Moodle 2.0 file system
+                        $old_filename = basename($path);
+                        $old_filepath = dirname($path);
+                        if ($old_filepath=='.' || $old_filepath=='') {
+                            $old_filepath = '/';
+                        } else {
+                            $old_filepath = '/'.ltrim($old_filepath, '/'); // require leading slash
+                            $old_filepath = rtrim($old_filepath, '/').'/'; // require trailing slash
+                        }
+
+                        // sanity check on $old_filename
+                        if (strpos($old_filename, '.')===false) {
+                            $task->$filearea = '';
+                            $DB->set_field('taskchain_tasks', $filearea, $task->$filearea, array('id' => $task->id));
+                            continue;
+                        }
+
+                        // update $task->$filearea, if necessary
+                        if ($task->$filearea != $old_filepath.$old_filename) {
+                            $task->$filearea = $old_filepath.$old_filename;
+                            $DB->set_field('taskchain_tasks', $filearea, $task->$filearea, array('id' => $task->id));
+                        }
+
+                        // set $courseid and $contextid from $task->$location
+                        // of where we expect to find the $file
+                        //   0 : HOTPOT_LOCATION_COURSEFILES
+                        //   1 : HOTPOT_LOCATION_SITEFILES
+                        //   2 : HOTPOT_LOCATION_WWW (not used)
+                        if ($task->$location) {
+                            $courseid = SITEID;
+                            $contextid = $sitecontext->id;
+                        } else {
+                            $courseid = $quiz->courseid;
+                            $contextid = $coursecontext->id;
+                        }
+
+                        // we expect to need the $filehash to get a file that has been migrated
+                        $filehash = sha1('/'.$contextid.'/course/legacy/0'.$old_filepath.$old_filename);
+
+                        // we might also need the old file path, if the file has not been migrated
+                        $oldfilepath = $CFG->dataroot.'/'.$courseid.$old_filepath.$old_filename;
+
+                        // set parameters used to add file to filearea
+                        // (sortorder=1 siginifies the "mainfile" in this filearea)
+                        $file_record = array(
+                            'contextid'=>$modulecontext->id, 'component'=>'mod_taskchain', 'filearea'=>$filearea,
+                            'sortorder'=>1, 'itemid'=>0, 'filepath'=>$old_filepath, 'filename'=>$old_filename
+                        );
+
+                        if ($file = $fs->get_file($modulecontext->id, 'mod_taskchain', $filearea, 0, $old_filepath, $old_filename)) {
+                            // file already exists for this context - shouldn't happen !!
+                            // maybe an earlier upgrade failed for some reason ?
+                            // anyway we must do this check, so that create_file_from_xxx() does not abort
+                        } else if ($url) {
+                            // file is on an external url - unusual ?!
+                            $file = false; // $fs->create_file_from_url($file_record, $url);
+                        } else if ($file = $fs->get_file_by_hash($filehash)) {
+                            // $file has already been migrated to Moodle's file system
+                            // this is the route we expect most people to come :-)
+                            $file = $fs->create_file_from_storedfile($file_record, $file);
+                        } else if (file_exists($oldfilepath)) {
+                            // $file still exists on server's filesystem - unusual ?!
+                            $file = $fs->create_file_from_pathname($file_record, $oldfilepath);
+                        } else {
+                            // file was not migrated and is not on server's filesystem
+                            $file = false;
+                        }
+
+                        // if $file did not exist, notify user of the problem
+                        if (empty($file)) {
+                            if ($url) {
+                                $msg = "course_modules.id=$quiz->cmid, url=$url";
+                            } else {
+                                $msg = "course_modules.id=$quiz->cmid, path=$path";
+                            }
+                            $params = array('update'=>$quiz->cmid, 'onclick'=>'this.target="_blank"');
+                            $msg = html_writer::link(new moodle_url('/course/modedit.php', $params), $msg);
+                            $msg = get_string($filearea.'notfound', 'taskchain', $msg);
+                            echo html_writer::tag('div', $msg, array('class'=>'notifyproblem'));
+                        }
+                    }
+                }
+                $i++;
+                $bar->update($i, $count, $strupdating.": ($i/$count)");
+            }
+            $rs->$close();
+            unset($fs);
+        }
+
+        ///////////////////////////////////////////////////
+        // transfer conditions from QuizPort to TaskChain
+        ///////////////////////////////////////////////////
+
+        $select = 'qc.*, qq.taskid';
+        $from   = '{quizport_conditions} qc '.
+                  'JOIN {quizport_quizzes} qq ON qc.quizid = qq.id';
+        $where  = 'qq.taskid > 0';
+        $order  = 'qq.unitid, qc.quizid, qc.conditiontype, qc.sortorder';
+
+        if ($count = $DB->count_records_sql("SELECT COUNT('x') FROM $from WHERE $where")) {
+            $rs = $DB->get_recordset_sql("SELECT $select FROM $from WHERE $where ORDER BY $order");
+        } else {
+            $rs = false;
+        }
+        if ($rs) {
+            $bar = new progress_bar('convertconditions', 500, true);
+            $i=0;
+            $strupdating = get_string('convertingconditions', 'quizport');
+            $bar->update($i, $count, $strupdating.": ($i/$count)");
+
+            // fields to convert taskid to taskid
+            $fields = array('condition', 'next');
+
+            foreach ($rs as $condition) {
+                if (($i % 1000) == 0) {
+                    upgrade_set_timeout(60 * 5); // another 5 minutes
+                }
+                $condition = (object)$condition;
+
+                foreach ($fields as $field) {
+                    $quizid = $field.'quizid';
+                    $taskid = $field.'taskid';
+                    if ($condition->$quizid < 0) {
+                        $condition->$taskid = $condition->$quizid;
+                    } else {
+                        $params = array('id' => $condition->$quizid);
+                        $condition->$taskid = $DB->get_field('quizport_quizzes', 'taskid', $params);
+                    }
+                    unset($condition->$quizid);
+                }
+
+                $id = $condition->id;
+                unset($condition->id);
+                unset($condition->quizid);
+                if ($condition->id = $DB->insert_record('taskchain_conditions', $condition)) {
+                    $DB->delete_records('quizport_conditions', array('id' => $id));
+                }
+
+                $i++;
+                $bar->update($i, $count, $strupdating.": ($i/$count)");
+            }
+            $rs->$close();
+        }
+
+        ///////////////////////////////////////////////////
+        // transfer strings from QuizPort to TaskChain
+        ///////////////////////////////////////////////////
+
+        $select = '*';
+        $from   = '{quizport_strings}';
+        $where  = 'newid = 0';
+
+        if ($count = $DB->count_records_sql("SELECT COUNT('x') FROM $from WHERE $where")) {
+            $rs = $DB->get_recordset_sql("SELECT $select FROM $from WHERE $where");
+        } else {
+            $rs = false;
+        }
+        if ($rs) {
+            $bar = new progress_bar('convertstrings', 500, true);
+            $i=0;
+            $strupdating = get_string('convertingstrings', 'quizport');
+            $bar->update($i, $count, $strupdating.": ($i/$count)");
+
+            foreach ($rs as $string) {
+                if (($i % 1000) == 0) {
+                    upgrade_set_timeout(60 * 5); // another 5 minutes
+                }
+                $string = (object)$string;
+
+                $id = $string->id;
+                unset($string->id);
+
+                $params = array('md5key' => $string->md5key);
+                if ($string->id = $DB->get_field('taskchain_strings', 'id', $params)) {
+                    // do nothing - string already exists in TaskChain
+                } else {
+                    $string->id = $DB->insert_record('taskchain_strings', $string);
+                }
+                if ($string->id) {
+                    $DB->set_field('quizport_strings', 'newid', $string->id, array('id' => $id));
+                }
+
+                $i++;
+                $bar->update($i, $count, $strupdating.": ($i/$count)");
+            }
+            $rs->$close();
+        }
+
+        ///////////////////////////////////////////////////
+        // transfer questions from QuizPort to TaskChain
+        ///////////////////////////////////////////////////
+
+        $select = 'CASE WHEN (qtn.text IS NULL) THEN 0 ELSE qs.id END';
+        $select = "qtn.id, qz.taskid, qtn.name, qtn.md5key, qtn.type, ($select) AS txt";
+        $from   = '{quizport_questions} qtn '.
+                  'JOIN {quizport_quizzes} qz ON qtn.quizid = qz.id '.
+                  'LEFT JOIN {quizport_strings} qs ON qtn.text = qs.id';
+        $where  = 'qtn.newid = 0 AND qz.taskid > 0';
+        $order  = 'qtn.quizid, qtn.id';
+
+        if ($count = $DB->count_records_sql("SELECT COUNT('x') FROM $from WHERE $where")) {
+            $rs = $DB->get_recordset_sql("SELECT $select FROM $from WHERE $where ORDER BY $order");
+        } else {
+            $rs = false;
+        }
+        if ($rs) {
+            $bar = new progress_bar('convertquestions', 500, true);
+            $i=0;
+            $strupdating = get_string('convertingquestions', 'quizport');
+            $bar->update($i, $count, $strupdating.": ($i/$count)");
+
+            foreach ($rs as $question) {
+                if (($i % 1000) == 0) {
+                    upgrade_set_timeout(60 * 5); // another 5 minutes
+                }
+                $question = (object)$question;
+
+                $id = $question->id;
+                unset($question->id);
+
+                if (isset($question->txt)) {
+                    $question->text = $question->txt;
+                    unset($question->txt);
+                } else {
+                    $question->text = 0;
+
+                }
+
+                $params = array('taskid' => $question->taskid, 'md5key' => $question->md5key);
+                if ($question->id = $DB->get_field('taskchain_questions', 'id', $params)) {
+                    // do nothing - question already exists in TaskChain
+                } else {
+                    $question->id = $DB->insert_record('taskchain_questions', $question);
+                }
+                if ($question->id) {
+                    $DB->set_field('quizport_questions', 'newid', $question->id, array('id' => $id));
+                }
+
+                $i++;
+                $bar->update($i, $count, $strupdating.": ($i/$count)");
+            }
+            $rs->$close();
+        }
+
+        ///////////////////////////////////////////////////
+        // convert QuizPort attempts to TaskChain attempts
+        ///////////////////////////////////////////////////
+
+        $select = "CASE WHEN (qd.details IS NULL) THEN '' ELSE qd.details END";
+        $select = 'qqa.*, '.
+                  'qq.taskid, qu.id AS unitid, qu.chainid, q.id AS quizportid, q.taskchainid, '.
+                  'qqs.id AS qqs_id, qqs.score AS qqs_score, qqs.status AS qqs_status, qqs.duration AS qqs_duration, qqs.timemodified AS qqs_timemodified, '.
+                  'qua.id AS qua_id, qua.grade AS qua_grade, qua.status AS qua_status, qua.duration AS qua_duration, qua.timemodified AS qua_timemodified, '.
+                  'qug.id AS qug_id, qug.grade AS qug_grade, qug.status AS qug_status, qug.duration AS qug_duration, qug.timemodified AS qug_timemodified, '.
+                  "($select) AS details";
+        $from   = '{quizport_quiz_attempts} qqa '.
+                  'JOIN {quizport_quizzes} qq ON qqa.quizid = qq.id '.
+                  'JOIN {quizport_quiz_scores} qqs ON qq.id = qqs.quizid AND qqa.userid = qqs.userid AND qqa.unumber = qqs.unumber '.
+                  'JOIN {quizport_units} qu ON qq.unitid = qu.id '.
+                  'JOIN {quizport_unit_attempts} qua ON qu.id = qua.unitid AND qqs.userid = qua.userid AND qqs.unumber = qua.unumber '.
+                  'JOIN {quizport} q ON qu.parenttype = 0 AND qu.parentid = q.id '.
+                  'JOIN {quizport_unit_grades} qug ON q.id = qug.parentid AND qug.parenttype = 0 AND qua.userid = qug.userid '.
+                  'LEFT JOIN {quizport_details} qd ON qqa.id = qd.attemptid';
+        $where  = 'qqa.newid = 0 AND qq.taskid > 0 AND qu.chainid > 0 AND q.taskchainid > 0';
+        $order  = 'q.course, q.id, qu.id, qq.sortorder, qqa.unumber, qqa.qnumber, qqa.timestart';
+
+        if ($count = $DB->count_records_sql("SELECT COUNT('x') FROM $from WHERE $where")) {
+            $rs = $DB->get_recordset_sql("SELECT $select FROM $from WHERE $where ORDER BY $order");
+        } else {
+            $rs = false;
+        }
+        if ($rs) {
+            $bar = new progress_bar('convertattempts', 500, true);
+            $i=0;
+            $strupdating = get_string('convertingattempts', 'quizport');
+            $bar->update($i, $count, $strupdating.": ($i/$count)");
+
+            $quizportid    = null;
+            $unitid        = null;
+            $quizid        = null;
+
+            $quizscoreid   = null;
+            $unitattemptid = null;
+            $unitgradeid   = null;
+
+            foreach ($rs as $attempt) {
+                if (($i % 1000) == 0) {
+                    upgrade_set_timeout(60 * 5); // another 5 minutes
+                }
+                $attempt = (object)$attempt;
+
+                if ($quizid && $quizid != $attempt->quizid) {
+                    if ($unitid && $unitid != $attempt->unitid) {
+                        if ($quizportid && $quizportid != $attempt->quizportid) {
+                            $params = array('parenttype' => 0, 'parentid' => $quizportid);
+                            $DB->delete_records('quizport_unit_grades', $params);
+                            $quizportid = $attempt->quizportid;
+                        }
+                        $params = array('unitid' => $unitid);
+                        $DB->delete_records('quizport_unit_attempts', $params);
+                        $unitid = $attempt->unitid;
+                    }
+                    $params = array('quizid' => $quizid);
+                    $DB->delete_records('quizport_task_scores',   $params);
+                    $quizid = $attempt->quizid;
+                }
+
+                if ($quizscoreid===null || $quizscoreid != $attempt->qqs_id) {
+                    if ($unitattemptid===null || $unitattemptid != $attempt->qua_id) {
+                        if ($unitgradeid===null || $unitgradeid != $attempt->qug_id) {
+
+                            // add chain grade
+                            $record = (object)array(
+                                'parenttype' => 0, // PARENTTYPE_ACTIVITY
+                                'parentid' => $attempt->taskchainid,
+                                'userid'   => $attempt->userid,
+                                'grade'    => $attempt->qug_grade,
+                                'status'   => $attempt->qug_status,
+                                'duration' => $attempt->qug_duration,
+                                'timemodified' => $attempt->qug_timemodified
+                            );
+
+                            $params = array('userid' => $record->userid, 'parenttype' => $record->parenttype, 'parentid' => $record->parentid);
+                            if ($record->id = $DB->get_field('taskchain_chain_grades', 'id', $params)) {
+                                // shouldn't happen !!
+                            } else {
+                                unset($record->id);
+                                $DB->insert_record('taskchain_chain_grades', $record);
+                            }
+                            $unitgradeid = $attempt->qug_id;
+                        }
+
+                        // add chain attempt
+                        $record = (object)array(
+                            'chainid'  => $attempt->chainid,
+                            'userid'   => $attempt->userid,
+                            'cnumber'  => $attempt->unumber,
+                            'grade'    => $attempt->qua_grade,
+                            'status'   => $attempt->qua_status,
+                            'duration' => $attempt->qua_duration,
+                            'timemodified' => $attempt->qua_timemodified
+                        );
+
+                        $params = array('userid' => $record->userid, 'chainid' => $record->chainid, 'cnumber' => $record->cnumber);
+                        if ($record->id = $DB->get_field('taskchain_chain_attempts', 'id', $params)) {
+                            // shouldn't happen !!
+                        } else {
+                            unset($record->id);
+                            $record->id = $DB->insert_record('taskchain_chain_attempts', $record);
+                        }
+                        $unitattemptid = $attempt->qua_id;
+                    }
+
+                    // add task score
+                    $record = (object)array(
+                        'taskid'  => $attempt->taskid,
+                        'userid'  => $attempt->userid,
+                        'cnumber' => $attempt->unumber,
+                        'score'   => $attempt->qqs_score,
+                        'status'  => $attempt->qqs_status,
+                        'duration' => $attempt->qqs_duration,
+                        'timemodified' => $attempt->qqs_timemodified
+                    );
+
+                    $params = array('userid' => $record->userid, 'taskid' => $record->taskid, 'cnumber' => $record->cnumber);
+                    if ($record->id = $DB->get_field('taskchain_task_scores', 'id', $params)) {
+                        // shouldn't happen !!
+                    } else {
+                        unset($record->id);
+                        $record->id = $DB->insert_record('taskchain_task_scores', $record);
+                    }
+                    $quizscoreid = $attempt->qqs_id;
+                }
+
+                // add task attempt
+                $record = (object)array(
+                    'taskid'  => $attempt->taskid,
+                    'userid'  => $attempt->userid,
+                    'cnumber' => $attempt->unumber,
+                    'tnumber' => $attempt->qnumber,
+                    'score'   => $attempt->score,
+                    'status'  => $attempt->status,
+                    'penalties' => $attempt->penalties,
+                    'duration'  => $attempt->duration,
+                    'starttime' => $attempt->starttime,
+                    'endtime'   => $attempt->endtime,
+                    'resumestart'  => $attempt->resumestart,
+                    'resumefinish' => $attempt->resumefinish,
+                    'timestart'    => $attempt->timestart,
+                    'timefinish'   => $attempt->timefinish,
+                    'clickreportid' => $attempt->clickreportid,
+                );
+
+                if ($record->id = $DB->insert_record('taskchain_task_attempts', $record)) {
+                    $DB->set_field('quizport_quiz_attempts', 'newid', $record->id, array('id' => $attempt->id));
+                }
+
+                // fix clickreportid - usually it is the same as the task attempt id
+                if ($clickreportid = $attempt->clickreportid) {
+                    if ($clickreportid==$id) {
+                        $clickreportid = $record->id;
+                    } else {
+                        $params = array('id' => $clickreportid);
+                        $clickreportid = $DB->get_field('quizport_quiz_attempts', 'newid', $params);
+                    }
+                    if ($clickreportid) {
+                        $params = array('id' => $record->id);
+                        $DB->set_field('taskchain_task_attempts', 'clickreportid', $clickreportid, $params);
+                    }
+                }
+
+                // transfer attempt details - not necessary on most Moodle sites
+                if ($attempt->details) {
+                    $record = (object)array(
+                        'attemptid' => $record->id,
+                        'details'   => $attempt->details,
+                    );
+                    if ($record->id = $DB->get_field('taskchain_details', 'id', array('attemptid' => $record->id))) {
+                        // record already exists - shouldn't happen !!
+                    } else {
+                        $record->id = $DB->insert_record('taskchain_details', $record);
+                    }
+                    if ($record->id) {
+                        $DB->delete_records('quizport_details', array('attemptid' => $attempt->id));
+                    }
+                }
+
+                $i++;
+                $bar->update($i, $count, $strupdating.": ($i/$count)");
+            }
+            $rs->$close();
+        }
+
+        ///////////////////////////////////////////////////
+        // transfer responses from QuizPort to TaskChain
+        ///////////////////////////////////////////////////
+
+        $select = 'qr.id, qqa.newid AS attemptid, qq.newid AS questionid, '.
+                  'qr.score, qr.weighting, qr.hints, qr.clues, qr.checks, '.
+                  'qr.correct, qr.wrong, qr.ignored';
+        $from   = '{quizport_responses} qr '.
+                  'JOIN {quizport_questions} qq ON qr.questionid = qq.id '.
+                  'JOIN {quizport_quiz_attempts} qqa ON qr.attemptid = qqa.id';
+        $where  = 'qq.newid > 0 AND qqa.newid > 0';
+        $order  = 'qqa.quizid, qq.id';
+
+        if ($count = $DB->count_records_sql("SELECT COUNT('x') FROM $from WHERE $where")) {
+            $rs = $DB->get_recordset_sql("SELECT $select FROM $from WHERE $where ORDER BY $order");
+        } else {
+            $rs = false;
+        }
+        if ($rs) {
+            $bar = new progress_bar('convertresponses', 500, true);
+            $i=0;
+            $strupdating = get_string('convertingresponses', 'quizport');
+            $bar->update($i, $count, $strupdating.": ($i/$count)");
+
+            // these fields contain string ids
+            $fields = array('correct', 'wrong', 'ignored');
+
+            foreach ($rs as $response) {
+                if (($i % 1000) == 0) {
+                    upgrade_set_timeout(60 * 5); // another 5 minutes
+                }
+                $response = (object)$response;
+
+                $id = $response->id;
+                unset($response->id);
+
+                foreach ($fields as $field) {
+                    if ($value = $response->$field) {
+                        $value = explode(',', $value);
+                        $value = array_filter($value);
+                        if ($value = implode(',', $value)) {
+                            if ($value = $DB->get_records_select_menu('quizport_strings', "id IN ($value)", null, '', 'id,newid')) {
+                                $value = array_values($value);
+                                $value = array_filter($value);
+                                $value = implode(',', $value);
+                            }
+                        }
+                    }
+                    $response->$field = ($value ? $value : '');
+                }
+
+                $params = array('attemptid' => $response->attemptid, 'questionid' => $response->questionid);
+                if ($response->id = $DB->get_field('taskchain_responses', 'id', $params)) {
+                    // do nothing - response already exists in TaskChain
+                } else {
+                    $response->id = $DB->insert_record('taskchain_responses', $response);
+                }
+                if ($response->id) {
+                    $DB->delete_records('quizport_responses', array('id' => $id));
+                }
+
+                $i++;
+                $bar->update($i, $count, $strupdating.": ($i/$count)");
+            }
+            $rs->$close();
+        }
+
+        // remove all quizport attempt data
+        $DB->delete_records('quizport_unit_grades');
+        $DB->delete_records('quizport_unit_attempts');
+        $DB->delete_records('quizport_quiz_scores');
+        $DB->delete_records('quizport_quiz_attempts');
+        $DB->delete_records('quizport_questions');
+        $DB->delete_records('quizport_responses');
+        $DB->delete_records('quizport_details');
+        $DB->delete_records('quizport_strings');
+
+        // remove all quizports, units, quizzes
+        $DB->delete_records('quizport_conditions');
+        $DB->delete_records('quizport_quizzes');
+        $DB->delete_records('quizport_cache');
+        $DB->delete_records('quizport_units');
+        $DB->delete_records('quizport');
+
+        // remove extra fields
+        foreach ($tables as $table => $fields) {
+            $table = new $xmldb_table_class($table);
+            foreach ($fields as $field) {
+                $field = new $xmldb_field_class($field);
+                if ($dbman->field_exists($table, $field)) {
+                    $dbman->drop_field($table, $field);
+                }
+            }
+        }
+
+        upgrade_mod_savepoint($result, "$newversion", 'quizport');
+
+        // disable quizport module
+        $DB->set_field('modules', 'visible', 0, array('name' => 'quizport'));
+    }
+
     return $result;
 }
 
@@ -1076,6 +1806,39 @@ function xmldb_quizport_field_set_attributes(&$field, $type, $precision=null, $u
         // Moodle 1.7 - 1.9: method name and parameter count are different
         // the two superfluous parameters are: $enum=null, $enumvalues=null
         return $field->setAttributes($type, $precision, $unsigned, $notnull, $sequence, null, null, $default, $previous);
+    }
+}
+
+function xmldb_quizport_convert_record($table, $columns, $oldrecord, $values=array()) {
+    global $DB;
+    $newrecord = new stdClass();
+    foreach ($columns as $column) {
+        $name = $column->name;
+        if ($name=='id') {
+            // do nothing
+        } else if (array_key_exists($name, $values)) {
+            $newrecord->$name = $values[$name];
+        } else if (isset($oldrecord->$name)) {
+            $newrecord->$name = $oldrecord->$name;
+        } else if (isset($column->default_value)) {
+            $newrecord->$name = $column->default_value;
+        } else {
+            if (isset($column->meta_type)) {
+                $is_num = preg_match('/[INTD]/', $column->meta_type); // Moodle >= 2.0
+            } else {
+                $is_num = preg_match('/int|decimal|double|float|time|year/i', $column->type);
+            }
+            if ($is_num) {
+                $newrecord->$name = 0;
+            } else {
+                $newrecord->$name = '';
+            }
+        }
+    }
+    if ($newrecord->id = $DB->insert_record($table, $newrecord)) {
+        return $newrecord;
+    } else {
+        return null;
     }
 }
 
