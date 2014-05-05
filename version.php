@@ -15,8 +15,8 @@ if (isset($plugin) && is_object($plugin)) {
 }
 
 $plugin->component = 'mod_quizport'; // for Moodle 2.x
-$plugin->version   = 2008040160;     // release date of this version
-$plugin->release   = 'v1.0.60';      // human-friendly version name (used in quizport/output/class.php)
+$plugin->version   = 2008040163;     // release date of this version
+$plugin->release   = 'v1.0.63';      // human-friendly version name (used in quizport/output/class.php)
 $plugin->cron      = 3600;           // period for cron to check this module (in seconds)
 
 if (defined('MATURITY_STABLE')) {
@@ -33,9 +33,13 @@ $plugin->requires = 2007101509;
 if (isset($CFG->version) && $CFG->version > 2010000000) {
     if (file_exists($CFG->dirroot.'/mod/taskchain') && $DB->record_exists('modules', array('name' => 'taskchain'))) {
         // trigger upgrade to Moodle 2.x (TaskChain)
-        $plugin->{'version'}  = 2014050160;
-        $plugin->{'release'}  = '2014.05.01 (60)';
+        $plugin->{'version'}  = 2014050163;
+        $plugin->{'release'}  = '2014.05.01 (63)';
     }
+    // Moodle >= 2.6 does not pass the "version" property
+    // to the QuizPort upgrade script in "db/upgrade.php"
+    // so we create out own property and use that instead
+    $plugin->{'pluginversion'}  = $plugin->{'version'};
     $plugin->{'requires'} = 2010000000;  // Moodle 2.0
 } else {
     $plugin->{'requires'} = 2003052900;  // Moodle 1.0.9

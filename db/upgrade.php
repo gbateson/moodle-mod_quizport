@@ -1026,9 +1026,23 @@ function xmldb_quizport_upgrade($oldversion=0, $module=null) {
         $DB->delete_records('quizport_cache');
     }
 
-    // finish here for Moodle 1.x or Moodle 2.x without TaskChain
-    if (empty($module) || $module->version <= 2010000000) {
+    // Moodle <= 1.9
+    if (empty($module)) {
         return $result;
+    }
+
+    // Moodle <= 2.5 without TaskChain
+    if (isset($module->version)) {
+        if ($module->version <= 2010000000) {
+            return $result;
+        }
+    }
+
+    // Moodle >= 2.6 without TaskChain
+    if (isset($module->pluginversion)) {
+        if ($module->pluginversion <= 2010000000) {
+            return $result;
+        }
     }
 
     //===== 2.0 upgrade line ======//
@@ -1040,9 +1054,14 @@ function xmldb_quizport_upgrade($oldversion=0, $module=null) {
         /// Convert QuizPorts to TaskChains ///
         ///////////////////////////////////////
 
+        // get repository class (Moodle >= 2.3)
+        if (file_exists($CFG->dirroot.'/repository')) {
+            require_once($CFG->dirroot.'/repository/lib.php');
+        }
+
         // add DB fields to store "new" ids
         // i.e. ids of corresponding TaskChain record
-        $tables = array(
+        $newfields = array(
             'quizport' => array('taskchainid'),
             'quizport_units' => array('chainid'),
             'quizport_quizzes' => array('taskid'),
@@ -1051,14 +1070,18 @@ function xmldb_quizport_upgrade($oldversion=0, $module=null) {
             'quizport_responses' => array('newid'),
             'quizport_quiz_attempts' => array('newid'),
         );
-        foreach ($tables as $table => $fields) {
-            $table = new $xmldb_table_class($table);
-            foreach ($fields as $field) {
-                    $field = new $xmldb_field_class($field);
-                    if (! $dbman->field_exists($table, $field)) {
-                        xmldb_quizport_field_set_attributes($field, XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'id');
-                        $dbman->add_field($table, $field);
-                    }
+        foreach ($newfields as $tablename => $fieldnames) {
+            $table = new $xmldb_table_class($tablename);
+            foreach ($fieldnames as $fieldname) {
+                $field = new $xmldb_field_class($fieldname);
+                if (! $dbman->field_exists($table, $field)) {
+                    xmldb_quizport_field_set_attributes($field, XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'id');
+                    $dbman->add_field($table, $field);
+                }
+                $index = new xmldb_index($tablename.'_'.$fieldname.'_key', XMLDB_INDEX_NOTUNIQUE, array($fieldname));
+                if (! $dbman->index_exists($table, $index)) {
+                    $dbman->add_index($table, $index);
+                }
             }
         }
 
@@ -1106,16 +1129,19 @@ function xmldb_quizport_upgrade($oldversion=0, $module=null) {
                         $DB->update_record('course_modules', $cm);
                     }
 
-                    // update grade_items records
-                    $params = array('itemmodule' => 'quizport', 'iteminstance' => $unit->quizportid);
-                    if ($grade_items = $DB->get_records('grade_items', $params)) {
-                        foreach ($grade_items as $grade_item) {
-                            $grade_item->itemmodule = 'taskchain';
-                            $grade_item->iteminstance = $taskchain->id;
-                            $DB->update_record('grade_items', $grade_item);
+                    // update records in "grade_items" and "grade_items_history"
+                    $tables = array('grade_items', 'grade_items_history');
+                    foreach ($tables as $table) {
+                        $params = array('itemmodule' => 'quizport', 'iteminstance' => $unit->quizportid);
+                        if ($grade_items = $DB->get_records($table, $params)) {
+                            foreach ($grade_items as $grade_item) {
+                                $grade_item->itemmodule = 'taskchain';
+                                $grade_item->iteminstance = $taskchain->id;
+                                $DB->update_record($table, $grade_item);
+                            }
                         }
                     }
-                    unset($grade_items);
+                    unset($grade_items, $grade_item, $tables, $table);
 
                     // mark this course as having been modified
                     $courseids[$taskchain->course] = true;
@@ -1159,27 +1185,31 @@ function xmldb_quizport_upgrade($oldversion=0, $module=null) {
             // get file storage object
             $fs = get_file_storage();
 
-            if (class_exists('context_course')) {
-                $sitecontext = context_course::instance(SITEID);
+            // initialize site/course/module context
+            if (class_exists('context_course') && class_exists('context_course')) {
+                $sitecontext   = context_course::instance(SITEID);
             } else {
-                $sitecontext = get_context_instance(CONTEXT_COURSE, SITEID);
+                $sitecontext   = get_context_instance(CONTEXT_COURSE, SITEID);
             }
+            $coursecontext = (object)array('id' => 0, 'instanceid' => 0);
+            $modulecontext = (object)array('id' => 0, 'instanceid' => 0);
 
-            $coursecontext = null;
-            $modulecontext = null;
+            // loop through quizzes
             foreach ($rs as $quiz) {
                 if (($i % 1000) == 0) {
                     upgrade_set_timeout(60 * 5); // another 5 minutes
                 }
                 $quiz = (object)$quiz;
-                if ($quiz->usemedialfilter=='quizport') {
-                    $quiz->usemedialfilter = 'taskchain';
+
+                if ($quiz->usemediafilter=='quizport') {
+                    $quiz->usemediafilter = 'taskchain';
                 }
+
                 if ($task = xmldb_quizport_convert_record('taskchain_tasks', $task_columns, $quiz)) {
                     $DB->set_field('quizport_quizzes', 'taskid', $task->id, array('id' => $quiz->id));
 
                     // get course context for this $quiz/$task
-                    if ($coursecontext===null || $coursecontext->instanceid != $quiz->courseid) {
+                    if ($coursecontext->instanceid != $quiz->courseid) {
                         if (class_exists('context_course')) {
                             $coursecontext = context_course::instance($quiz->courseid);
                         } else {
@@ -1188,7 +1218,7 @@ function xmldb_quizport_upgrade($oldversion=0, $module=null) {
                     }
 
                     // get module context for this $quiz/$task
-                    if ($modulecontext===null || $modulecontext->instanceid != $quiz->cmid) {
+                    if ($modulecontext->instanceid != $quiz->cmid) {
                         if (class_exists('context_module')) {
                             $modulecontext = context_module::instance($quiz->cmid);
                         } else {
@@ -1271,8 +1301,10 @@ function xmldb_quizport_upgrade($oldversion=0, $module=null) {
                             // maybe an earlier upgrade failed for some reason ?
                             // anyway we must do this check, so that create_file_from_xxx() does not abort
                         } else if ($url) {
-                            // file is on an external url - unusual ?!
-                            $file = false; // $fs->create_file_from_url($file_record, $url);
+                            // file is on an external url
+                            $file = $fs->create_file_from_url($file_record, $url);
+                        } else if ($file = xmldb_quizport_locate_externalfile($modulecontext->id, 'mod_taskchain', $filearea, 0, $old_filepath, $old_filename)) {
+                            // file exists in external repository - great !
                         } else if ($file = $fs->get_file_by_hash($filehash)) {
                             // $file has already been migrated to Moodle's file system
                             // this is the route we expect most people to come :-)
@@ -1616,7 +1648,7 @@ function xmldb_quizport_upgrade($oldversion=0, $module=null) {
 
                 // fix clickreportid - usually it is the same as the task attempt id
                 if ($clickreportid = $attempt->clickreportid) {
-                    if ($clickreportid==$id) {
+                    if ($clickreportid==$attempt->id) {
                         $clickreportid = $record->id;
                     } else {
                         $params = array('id' => $clickreportid);
@@ -1735,10 +1767,14 @@ function xmldb_quizport_upgrade($oldversion=0, $module=null) {
         $DB->delete_records('quizport');
 
         // remove extra fields
-        foreach ($tables as $table => $fields) {
-            $table = new $xmldb_table_class($table);
-            foreach ($fields as $field) {
-                $field = new $xmldb_field_class($field);
+        foreach ($newfields as $tablename => $fieldnames) {
+            $table = new $xmldb_table_class($tablename);
+            foreach ($fieldnames as $fieldname) {
+                $index = new xmldb_index($tablename.'_'.$fieldname.'_key', XMLDB_INDEX_NOTUNIQUE, array($fieldname));
+                if ($dbman->index_exists($table, $index)) {
+                    $dbman->drop_index($table, $index);
+                }
+                $field = new $xmldb_field_class($fieldname);
                 if ($dbman->field_exists($table, $field)) {
                     $dbman->drop_field($table, $field);
                 }
@@ -1840,6 +1876,122 @@ function xmldb_quizport_convert_record($table, $columns, $oldrecord, $values=arr
     } else {
         return null;
     }
+}
+
+function xmldb_quizport_locate_externalfile($contextid, $component, $filearea, $itemid, $filepath, $filename) {
+    global $DB;
+
+    if (! class_exists('repository')) {
+        return false; // Moodle <= 2.2 has no repositories
+    }
+
+    static $repositories = null;
+    if ($repositories===null) {
+        $exclude_types = array('recent', 'upload', 'user', 'areafiles');
+        $repositories = repository::get_instances();
+        foreach (array_keys($repositories) as $id) {
+            $type = $repositories[$id]->get_typename();
+            if (in_array($type, $exclude_types)) {
+                unset($repositories[$id]);
+            }
+        }
+    }
+
+    // get file storage
+    $fs = get_file_storage();
+
+    // the following types repository use encoded params
+    $encoded_types = array('user', 'areafiles', 'coursefiles');
+
+    foreach ($repositories as $id => $repository) {
+
+        // "filesystem" path is in plain text, others are encoded
+        $type = $repositories[$id]->get_typename();
+        $encodepath = in_array($type, $encoded_types);
+
+        // save $root_path, because it may get messed up by
+        // $repository->get_listing($path), if $path is non-existant
+        if (isset($repository->root_path)) {
+            $root_path = $repository->root_path;
+        } else {
+            $root_path = false;
+        }
+
+        // get repository type
+        switch (true) {
+            case isset($repository->options['type']):
+                $type = $repository->options['type'];
+                break;
+            case isset($repository->instance->typeid):
+                $type = repository::get_type_by_id($repository->instance->typeid);
+                $type = $type->get_typename();
+                break;
+            default:
+                $type = ''; // shouldn't happen !!
+        }
+
+        $path = $filepath;
+        $source = trim($filepath.$filename, '/');
+
+        // setup $params for path encoding, if necessary
+        $params = array();
+        if ($encodepath) {
+            $listing = $repository->get_listing();
+            switch (true) {
+                case isset($listing['list'][0]['source']): $param = 'source'; break; // file
+                case isset($listing['list'][0]['path']):   $param = 'path';   break; // dir
+                default: return false; // shouldn't happen !!
+            }
+            $params = file_storage::unpack_reference($listing['list'][0][$param], true);
+
+            $params['filepath'] = '/'.$path.($path=='' ? '' : '/');
+            $params['filename'] = '.'; // "." signifies a directory
+            $path = file_storage::pack_reference($params);
+        }
+
+        // reset $repository->root_path (filesystem repository only)
+        if ($root_path) {
+            $repository->root_path = $root_path;
+        }
+
+        // Note: we use "@" to suppress warnings in case $path does not exist
+        $listing = @$repository->get_listing($path);
+        foreach ($listing['list'] as $file) {
+
+            switch (true) {
+                case isset($file['source']): $param = 'source'; break; // file
+                case isset($file['path']):   $param = 'path';   break; // dir
+                default: continue; // shouldn't happen !!
+            }
+
+            if ($encodepath) {
+                $file[$param] = file_storage::unpack_reference($file[$param]);
+                $file[$param] = trim($file[$param]['filepath'], '/').'/'.$file[$param]['filename'];
+            }
+
+            if ($file[$param]==$source) {
+
+                if ($encodepath) {
+                    $params['filename'] = $filename;
+                    $source = file_storage::pack_reference($params);
+                }
+
+                $file_record = array(
+                    'contextid' => $contextid, 'component' => $component, 'filearea' => $filearea,
+                    'sortorder' => 0, 'itemid' => 0, 'filepath' => $filepath, 'filename' => $filename
+                );
+
+                if ($file = $fs->create_file_from_reference($file_record, $id, $source)) {
+                    return $file;
+                }
+
+                break; // try another repository
+            }
+        }
+    }
+
+    // external file not found (or found but not created)
+    return false;
 }
 
 function xmldb_quizport_check_indexes($result, $filepath='') {
