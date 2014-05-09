@@ -1890,7 +1890,11 @@ function xmldb_quizport_locate_externalfile($contextid, $component, $filearea, $
         $exclude_types = array('recent', 'upload', 'user', 'areafiles');
         $repositories = repository::get_instances();
         foreach (array_keys($repositories) as $id) {
-            $type = $repositories[$id]->get_typename();
+            if (method_exists($repositories[$id], 'get_typename')) {
+                $type = $repositories[$id]->get_typename();
+            } else {
+                $type = $repositories[$id]->options['type'];
+            }
             if (in_array($type, $exclude_types)) {
                 unset($repositories[$id]);
             }
@@ -1906,7 +1910,11 @@ function xmldb_quizport_locate_externalfile($contextid, $component, $filearea, $
     foreach ($repositories as $id => $repository) {
 
         // "filesystem" path is in plain text, others are encoded
-        $type = $repositories[$id]->get_typename();
+        if (method_exists($repositories[$id], 'get_typename')) {
+            $type = $repositories[$id]->get_typename();
+        } else {
+            $type = $repositories[$id]->options['type'];
+        }
         $encodepath = in_array($type, $encoded_types);
 
         // save $root_path, because it may get messed up by
