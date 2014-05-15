@@ -1182,14 +1182,21 @@ function xmldb_quizport_upgrade($oldversion=0, $module=null) {
             // cache info on columns in "taskchain_tasks" table
             $task_columns = $DB->get_columns('taskchain_tasks');
 
+            // cache upgraderunning flag
+            if (isset($CFG->upgraderunning)) {
+                $upgraderunning = $CFG->upgraderunning;
+            } else {
+                $upgraderunning = null;
+            }
+
             // get file storage object
             $fs = get_file_storage();
 
             // initialize site/course/module context
-            if (class_exists('context_course') && class_exists('context_course')) {
-                $sitecontext   = context_course::instance(SITEID);
+            if (class_exists('context_course')) {
+                $sitecontext = context_course::instance(SITEID);
             } else {
-                $sitecontext   = get_context_instance(CONTEXT_COURSE, SITEID);
+                $sitecontext = get_context_instance(CONTEXT_COURSE, SITEID);
             }
             $coursecontext = (object)array('id' => 0, 'instanceid' => 0);
             $modulecontext = (object)array('id' => 0, 'instanceid' => 0);
@@ -1303,7 +1310,7 @@ function xmldb_quizport_upgrade($oldversion=0, $module=null) {
                         } else if ($url) {
                             // file is on an external url
                             $file = $fs->create_file_from_url($file_record, $url);
-                        } else if ($file = xmldb_quizport_locate_externalfile($modulecontext->id, 'mod_taskchain', $filearea, 0, $old_filepath, $old_filename)) {
+                        } else if ($file = xmldb_quizport_locate_externalfile($modulecontext->id, 'mod_taskchain', $filearea, 0, $old_filepath, $old_filename, $upgraderunning)) {
                             // file exists in external repository - great !
                         } else if ($file = $fs->get_file_by_hash($filehash)) {
                             // $file has already been migrated to Moodle's file system
@@ -1878,8 +1885,8 @@ function xmldb_quizport_convert_record($table, $columns, $oldrecord, $values=arr
     }
 }
 
-function xmldb_quizport_locate_externalfile($contextid, $component, $filearea, $itemid, $filepath, $filename) {
-    global $DB;
+function xmldb_quizport_locate_externalfile($contextid, $component, $filearea, $itemid, $filepath, $filename, $upgraderunning) {
+    global $CFG, $DB;
 
     if (! class_exists('repository')) {
         return false; // Moodle <= 2.2 has no repositories
@@ -1962,6 +1969,11 @@ function xmldb_quizport_locate_externalfile($contextid, $component, $filearea, $
             $repository->root_path = $root_path;
         }
 
+        // unset upgraderunning because it causes get_listing() to fail
+        if (isset($upgraderunning)) {
+            $CFG->upgraderunning = null;
+        }
+
         // Note: we use "@" to suppress warnings in case $path does not exist
         $listing = @$repository->get_listing($path);
         foreach ($listing['list'] as $file) {
@@ -1995,6 +2007,11 @@ function xmldb_quizport_locate_externalfile($contextid, $component, $filearea, $
 
                 break; // try another repository
             }
+        }
+
+        // restore upgraderunning flag
+        if (isset($upgraderunning)) {
+            $CFG->upgraderunning = $upgraderunning;
         }
     }
 
