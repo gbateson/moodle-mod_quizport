@@ -1182,13 +1182,6 @@ function xmldb_quizport_upgrade($oldversion=0, $module=null) {
             // cache info on columns in "taskchain_tasks" table
             $task_columns = $DB->get_columns('taskchain_tasks');
 
-            // cache upgraderunning flag
-            if (isset($CFG->upgraderunning)) {
-                $upgraderunning = $CFG->upgraderunning;
-            } else {
-                $upgraderunning = null;
-            }
-
             // get file storage object
             $fs = get_file_storage();
 
@@ -1310,7 +1303,7 @@ function xmldb_quizport_upgrade($oldversion=0, $module=null) {
                         } else if ($url) {
                             // file is on an external url
                             $file = $fs->create_file_from_url($file_record, $url);
-                        } else if ($file = xmldb_quizport_locate_externalfile($modulecontext->id, 'mod_taskchain', $filearea, 0, $old_filepath, $old_filename, $upgraderunning)) {
+                        } else if ($file = xmldb_quizport_locate_externalfile($modulecontext->id, 'mod_taskchain', $filearea, 0, $old_filepath, $old_filename)) {
                             // file exists in external repository - great !
                         } else if ($file = $fs->get_file_by_hash($filehash)) {
                             // $file has already been migrated to Moodle's file system
@@ -1885,7 +1878,7 @@ function xmldb_quizport_convert_record($table, $columns, $oldrecord, $values=arr
     }
 }
 
-function xmldb_quizport_locate_externalfile($contextid, $component, $filearea, $itemid, $filepath, $filename, $upgraderunning) {
+function xmldb_quizport_locate_externalfile($contextid, $component, $filearea, $itemid, $filepath, $filename) {
     global $CFG, $DB;
 
     if (! class_exists('repository')) {
@@ -1970,9 +1963,13 @@ function xmldb_quizport_locate_externalfile($contextid, $component, $filearea, $
         }
 
         // unset upgraderunning because it causes get_listing() to fail
-        if (isset($upgraderunning)) {
+        if (isset($CFG->upgraderunning)) {
+            $upgraderunning = $CFG->upgraderunning;
             $CFG->upgraderunning = null;
+        } else {
+            $upgraderunning = null;
         }
+
 
         // Note: we use "@" to suppress warnings in case $path does not exist
         $listing = @$repository->get_listing($path);
