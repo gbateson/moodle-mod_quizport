@@ -125,6 +125,27 @@ class quizport_output_hp_6_jmix extends quizport_output_hp_6 {
         $this->bodycontent = preg_replace($search, $replace, $this->bodycontent, 1);
     }
 
+    function fix_navigation_buttons()  {
+        parent::fix_navigation_buttons();
+
+        // replace location.reload() in <button class="FuncButton" ... onclick="location.reload()" ...">
+        // with javascript code to return all tiles/segments to their starting positions
+        $search = '/(?<='.'onclick=")location.reload\(\);?'.'(?=")/';
+        if (strpos(get_class($this), '_plus_')) {
+            // Drag and Drop
+            $replace = 'for (var i=0; i<Cds.length; i++) Cds[i].GoHome(); return false;';
+        } else {
+            // clickety-click
+            $replace = 'GuessSequence = new Array();'.
+                       'BuildCurrGuess();'.
+                       'BuildExercise();'.
+                       'DisplayExercise(Exercise);'.
+                       "WriteToGuess('<span class=&quot;Answer&quot;>' + Output + '</span>');".
+                       'return false;';
+        }
+        $this->bodycontent = preg_replace($search, $replace, $this->bodycontent);
+    }
+
     function get_js_functionnames() {
         // start list of function names
         $names = parent::get_js_functionnames();

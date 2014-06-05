@@ -15,8 +15,8 @@ if (isset($plugin) && is_object($plugin)) {
 }
 
 $plugin->component = 'mod_quizport'; // for Moodle 2.x
-$plugin->version   = 2008040167;     // release date of this version
-$plugin->release   = 'v1.0.67';      // human-friendly version name (used in quizport/output/class.php)
+$plugin->version   = 2008040169;     // release date of this version
+$plugin->release   = 'v1.0.69';      // human-friendly version name (used in quizport/output/class.php)
 $plugin->cron      = 3600;           // period for cron to check this module (in seconds)
 
 if (defined('MATURITY_STABLE')) {
@@ -30,11 +30,24 @@ $plugin->requires = 2007101509;
 // ... actually the QuizPort module can run on *any* version of Moodle
 // although on Moodle 2.x it is only here to allow upgrade to TaskChain
 
-if (isset($CFG->version) && $CFG->version > 2010000000) {
-    if (file_exists($CFG->dirroot.'/mod/taskchain') && $DB->record_exists('modules', array('name' => 'taskchain'))) {
+if (isset($this) && get_class($this)=='core_plugin_manager') {
+    // Moodle >= 2.6 "lib/classes/plugin_manager.php"
+    $plugin->moodle_2x = true;
+    $plugin->taskchain = (isset($plugs) && isset($plugs['taskchain']));
+} else if (isset($CFG->version) && $CFG->version > 2010000000) {
+    // Moodle >= 2.0 "lib/upgradelib.php"
+    $plugin->moodle_2x = true;
+    $plugin->taskchain = file_exists($CFG->dirroot.'/mod/taskchain');
+} else {
+    $plugin->moodle_2x = false;
+    $plugin->taskchain = false;
+}
+
+if ($plugin->moodle_2x) {
+    if ($plugin->taskchain) {
         // trigger upgrade to Moodle 2.x (TaskChain)
-        $plugin->{'version'}  = 2014050167;
-        $plugin->{'release'}  = '2014.05.01 (67)';
+        $plugin->{'version'}  = 2014052069;
+        $plugin->{'release'}  = '2014.05.20 (69)';
     }
     // Moodle >= 2.6 does not pass the "version" property
     // to the QuizPort upgrade script in "db/upgrade.php"
@@ -42,8 +55,10 @@ if (isset($CFG->version) && $CFG->version > 2010000000) {
     $plugin->{'pluginversion'}  = $plugin->{'version'};
     $plugin->{'requires'} = 2010000000;  // Moodle 2.0
 } else {
+    // Moodle <= 1.9
     $plugin->{'requires'} = 2003052900;  // Moodle 1.0.9
 }
+unset($plugin->moodle_2x, $plugin->taskchain);
 
 if (isset($saveplugin)) {
     $module = $plugin;

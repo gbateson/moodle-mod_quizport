@@ -1006,7 +1006,7 @@ function xmldb_quizport_upgrade($oldversion=0, $module=null) {
         upgrade_mod_savepoint($result, "$newversion", 'quizport');
     }
 
-    $newversion = 2008040150;
+    $newversion = 2008040169;
     if ($result && $oldversion < $newversion) {
         $empty_cache = true;
         upgrade_mod_savepoint($result, "$newversion", 'quizport');
@@ -1899,6 +1899,10 @@ function xmldb_quizport_locate_externalfile($contextid, $component, $filearea, $
                 unset($repositories[$id]);
             }
         }
+        // ensure upgraderunning is set
+        if (empty($CFG->upgraderunning)) {
+            $CFG->upgraderunning = null;
+        }
     }
 
     // get file storage
@@ -1962,17 +1966,17 @@ function xmldb_quizport_locate_externalfile($contextid, $component, $filearea, $
             $repository->root_path = $root_path;
         }
 
-        // unset upgraderunning because it causes get_listing() to fail
-        if (isset($CFG->upgraderunning)) {
-            $upgraderunning = $CFG->upgraderunning;
-            $CFG->upgraderunning = null;
-        } else {
-            $upgraderunning = null;
-        }
-
+        // unset upgraderunning because it can cause get_listing() to fail
+        $upgraderunning = $CFG->upgraderunning;
+        $CFG->upgraderunning = null;
 
         // Note: we use "@" to suppress warnings in case $path does not exist
         $listing = @$repository->get_listing($path);
+
+        // restore upgraderunning flag
+        $CFG->upgraderunning = $upgraderunning;
+
+        // check each file to see if it is the one we want
         foreach ($listing['list'] as $file) {
 
             switch (true) {
@@ -2004,11 +2008,6 @@ function xmldb_quizport_locate_externalfile($contextid, $component, $filearea, $
 
                 break; // try another repository
             }
-        }
-
-        // restore upgraderunning flag
-        if (isset($upgraderunning)) {
-            $CFG->upgraderunning = $upgraderunning;
         }
     }
 
