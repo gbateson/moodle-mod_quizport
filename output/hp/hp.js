@@ -456,8 +456,227 @@ function hpField(name, value) {
         }
         return s_out;
     }
+};
+
+///////////////////////////////////////////
+// cross-platform/device event API
+///////////////////////////////////////////
+
+/**
+ * HP_fix_event
+ *
+ * @param  string evt : the name of the event (without leading 'on')
+ * @return string
+ */
+function HP_fix_event(evt) {
+	if (typeof(document.body.ontouchstart)==='undefined') {
+		switch (evt) {
+			case 'tap'        : return 'click';
+			case 'touchstart' : return 'mousedown';
+			case 'touchmove'  : return 'mousemove';
+			case 'touchend'   : return 'mouseup';
+		}
+	} else {
+		switch (evt) {
+			case 'click'     : return 'tap';
+			case 'mousedown' : return 'touchstart';
+			case 'mousemove' : return 'touchmove';
+			case 'mouseup'   : return 'touchend';
+		}
+	}
+	return evt;
 }
 
+/**
+ * HP_add_listener
+ *
+ * @param  object obj : an HTML element
+ * @param  string evt : the name of the event (without leading 'on')
+ * @param  string fnc : the name of the event handler funtion
+ * @param  boolean useCapture (optional, default = false)
+ * @return void, but may add event handler to DOM
+ */
+function HP_add_listener(obj, evt, fnc, useCapture) {
+
+	if (typeof(fnc)=='string') {
+		fnc = new Function(fnc);
+	}
+
+	// transfer object's old event handler (if any)
+	var evt = HP_fix_event(evt);
+	var onevent = 'on' + evt;
+	if (obj[onevent]) {
+		var old_fnc = obj[onevent];
+		obj[onevent] = null;
+		HP_add_listener(obj, evt, old_fnc, useCapture);
+	}
+
+	if (obj.addEventListener) {
+		obj.addEventListener(evt, fnc, (useCapture ? true : false));
+	} else if (obj.attachEvent) {
+		obj.attachEvent(onevent, fnc);
+	} else { // old browser NS4, IE5 ...
+		if (! obj.evts) {
+			obj.evts = new Array();
+		}
+		if (obj.evts && ! obj.evts[onevent]) {
+			obj.evts[onevent] = new Array();
+		}
+		if (obj.evts && obj.evts[onevent] && ! obj.evts[onevent]) {
+			obj.evts[onevent][obj.evts[onevent].length] = fnc;
+			obj[onevent] = new Function('HP_handle_event(this, \"'+onevent+'\")');
+		}
+	}
+}
+
+/**
+ * HP_remove_listener
+ *
+ * @param  object obj : an HTML element
+ * @param  string evt : the name of the event (without leading 'on')
+ * @param  string fnc : the name of the event handler funtion
+ * @param  boolean useCapture (optional, default = false)
+ * @return void, but may remove event handler to DOM
+ */
+function HP_remove_listener(obj, evt, fnc, useCapture) {
+	var onevent = 'on' + evt;
+	if (obj.removeEventListener) {
+		obj.removeEventListener(evt, fnc, (useCapture ? true : false));
+	} else if (obj.attachEvent) {
+		obj.detachEvent(onevent, fnc);
+	} else if (obj.evts && obj.evts[onevent]) {
+		var i_max = obj.evts[onevent].length;
+		for (var i=(i_max - 1); i>=0; i--) {
+			if (obj.evts[onevent][i]==fnc) {
+				obj.evts[onevent].splice(i, 1);
+			}
+		}
+	}
+}
+
+/**
+ * HP_handle_event
+ *
+ * @param  object obj : an HTML element
+ * @param  string onevent : the name of the event
+ * @return void, but may execute event handler
+ */
+function HP_handle_event(obj, onevent) {
+	if (obj.evts[onevent]) {
+		var i_max = obj.evts[onevent].length
+		for (var i=0; i<i_max; i++) {
+			obj.evts[onevent][i]();
+		}
+	}
+}
+
+/**
+ * HP_disable_event
+ *
+ * @param  object evt : an javascript event object
+ * @return may return false (older browsers)
+ */
+function HP_disable_event(evt) {
+	if (evt==null) {
+		evt = window.event;
+	}
+	if (evt.preventDefault) {
+		evt.preventDefault();
+	} else { // IE <= 8
+		evt.returnValue = false;
+	}
+	return false;
+}
+
+///////////////////////////////////////////
+// handle quiz events and send results
+///////////////////////////////////////////
+
+/**
+ * HP_send_results
+ *
+ * @param integer evt one of the HP.EVENT_xxx contants
+ * @return boolean
+ */
+function HP_send_results(evt) {
+    if (evt==null || window.HP==null) {
+        return ''; // shouldn't happen !!
+    }
+
+    // extract and convert event type, if necessary
+    if (typeof(evt)=='object') {
+        evt = (evt.type ? evt.type.toUpperCase() : '');
+        evt = (HP['EVENT_' + evt] || HP.EVENT_EMPTY);
+    }
+
+    // default status
+    var status = HP.STATUS_NONE;
+
+    // default action is not to send results
+    var send_results = false;
+
+    switch (true) {
+
+        case HP.end_of_quiz():
+            // quiz is already finished
+            break;
+
+        case HP.end_of_quiz(evt):
+            // quiz has just finished
+            send_results = true;
+            switch (evt) {
+                case HP.EVENT_TIMEDOUT:   status = HP.STATUS_TIMEDOUT;  break;
+                case HP.EVENT_ABANDONED:  status = HP.STATUS_ABANDONED; break;
+                case HP.EVENT_COMPLETED:  status = HP.STATUS_COMPLETED; break;
+                case HP.EVENT_SETVALUES:  status = HP.STATUS_COMPLETED; break;
+                case HP.EVENT_SENDVALUES: status = HP.STATUS_COMPLETED; break;
+            }
+            break;
+
+        case HP.navigation_event(evt) && (HP.quiz_input_event() || HP.quiz_button_event()):
+            // navigation event, following a button or input event
+            // we need to set status to ABANDONED, because this may be our last chance
+            send_results = true;
+            status = HP.STATUS_ABANDONED;
+            break;
+
+        case (HP.quiz_input_event(evt) || HP.quiz_button_event(evt)) && HP.navigation_event():
+            // button or input event, following a navigation event
+            // we need to set status to INPROGRESS, in case it was set to ABANDONED above
+            send_results = true;
+            status = HP.STATUS_INPROGRESS;
+            break;
+
+        case HP.sendallclicks && HP.quiz_button_event(evt):
+            // send all button events for the "click report"
+            send_results = true;
+            status = HP.STATUS_INPROGRESS;
+            break;
+    }
+
+    if (send_results) {
+        HP.send_results(evt, status);
+    }
+
+    if (evt==HP.EVENT_BEFOREUNLOAD && window.HP_beforeunload) {
+        return HP_beforeunload();
+    } else {
+        return evt;
+    }
+};
+
+///////////////////////////////////////////
+// DOM extraction utilities
+///////////////////////////////////////////
+
+/**
+ * GetTextFromNodeN
+ *
+ * @param xxx obj
+ * @param xxx className
+ * @param xxx n
+ * @return xxx
+ */
 function GetTextFromNodeN(obj, className, n) {
     // returns the text under the nth node of obj with the target class name
     var txt = '';

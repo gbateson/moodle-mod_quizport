@@ -629,13 +629,13 @@ class quizport_output_hp_6 extends quizport_output_hp {
 
         // add detection of Chrome browser
         $search = '/(\s*)if \(this\.min == false\)\{/s';
-        $replace = "\\1"
-            ."this.chrome = (this.ua.indexOf('Chrome') > 0);\\1"
-            ."if (this.chrome) {\\1"
-            ."	this.geckoVer = 0;\\1"
-            ."	this.safari = false;\\1"
-            ."	this.min = true;\\1"
-            ."}\\0"
+        $replace = '$1'
+            ."this.chrome = (this.ua.indexOf('Chrome') > 0);".'$1'
+            ."if (this.chrome) {".'$1'
+            ."	this.geckoVer = 0;".'$1'
+            ."	this.safari = false;".'$1'
+            ."	this.min = true;".'$1'
+            ."}$0"
         ;
         $substr = preg_replace($search, $replace, $substr, 1);
 
@@ -990,10 +990,10 @@ class quizport_output_hp_6 extends quizport_output_hp {
         // hide <embed> elements on Chrome browser
         $search = "/(\s*)ShowElements\(true, 'object', 'FeedbackContent'\);/s";
         $replace = ''
-            ."\\0\\1"
-            ."if (C.chrome) {\\1"
-            ."	ShowElements(false, 'embed');\\1"
-            ."	ShowElements(true, 'embed', 'FeedbackContent');\\1"
+            .'$0'.'$1'
+            ."if (C.chrome) {".'$1'
+            ."	ShowElements(false, 'embed');".'$1'
+            ."	ShowElements(true, 'embed', 'FeedbackContent');".'$1'
             ."}"
         ;
         $substr = preg_replace($search, $replace, $substr, 1);
@@ -1002,9 +1002,9 @@ class quizport_output_hp_6 extends quizport_output_hp {
         if ($this->studentfeedback) {
             $search = '/(\s*)var Output = [^;]*;/';
             $replace = ''
-                ."\\0\\1"
-                ."if (window.FEEDBACK) {\\1"
-                ."	Output += '".'<a href="javascript:hpFeedback();">'."' + FEEDBACK[6] + '</a>';\\1"
+                .'$0'.'$1'
+                ."if (window.FEEDBACK) {".'$1'
+                ."	Output += '".'<a href="javascript:hpFeedback();">'."' + FEEDBACK[6] + '</a>';".'$1'
                 ."}"
             ;
             $substr = preg_replace($search, $replace, $substr, 1);
@@ -1020,7 +1020,7 @@ class quizport_output_hp_6 extends quizport_output_hp {
     function fix_js_StartUp_DragAndDrop_DragArea(&$substr) {
         // fix LeftCol (=left side of drag area)
         $search = '/(LeftColPos = [^;]+);/';
-        $replace = '\\1 + pg.Left;';
+        $replace = '$1 + pg.Left;';
         $substr = preg_replace($search, $replace, $substr, 1);
 
         // fix DragTop (=top side of Drag area)
@@ -1180,9 +1180,9 @@ class quizport_output_hp_6 extends quizport_output_hp {
         // unhide <embed> elements on Chrome browser
         $search = "/(\s*)ShowElements\(true, 'object'\);/s";
         $replace = ''
-            ."\\0\\1"
-            ."if (C.chrome) {\\1"
-            ."	ShowElements(true, 'embed');\\1"
+            .'$0$1'
+            ."if (C.chrome) {".'$1'
+            ."	ShowElements(true, 'embed');".'$1'
             ."}"
         ;
         $substr = preg_replace($search, $replace, $substr, 1);
@@ -1393,6 +1393,110 @@ class quizport_output_hp_6 extends quizport_output_hp {
             ."		}\n"
             ."	}\n"
         ;
+    }
+
+    public function fix_js_CardSetHTML(&$str, $start, $length)  {
+        $substr = substr($str, $start, $length);
+        $search = '/(DragImgs\[i\]). onmousedown = (.*)/';
+        $replace = "HP_add_listener(DragImgs[i], 'mousedown', 'return false');";
+        $substr = preg_replace($search, $replace, $substr);
+        $str = substr_replace($str, $substr, $start, $length);
+    }
+
+    public function fix_js_beginDrag(&$str, $start, $length)  {
+        $substr = substr($str, $start, $length);
+        if (strpos($str, 'function beginDrag', $start + $length)) {
+            $substr = ''; // remove first occurrence of this function
+        } else {
+            // add event handlers for touch screens
+            $search = '/(\s*)([a-z]+).on(mouse[a-z]+)=([a-z]+Drag);?/s';
+            //$replace = '$1$2.onmouse$3 = $4;$1$2.touch$3 = $4;';
+            $replace = '$1HP_add_listener($2, \'$3\', $4);';
+            $substr = preg_replace($search, $replace, $substr);
+
+            // detect drag position for mouse AND touch
+            if ($target = $this->get_beginDrag_target()) {
+                $substr = $this->fix_js_clientXY($substr, $target);
+            }
+
+            // disable scrolling on touch screens
+            $substr = $this->fix_js_disable_event($substr);
+        }
+        $str = substr_replace($str, $substr, $start, $length);
+    }
+
+    public function get_beginDrag_target() {
+        return '';
+    }
+
+    public function fix_js_doDrag(&$str, $start, $length)  {
+        $substr = substr($str, $start, $length);
+        if (strpos($str, 'function doDrag', $start + $length)) {
+             $substr = ''; // remove first occurrence of this function
+        } else {
+            // reformat single line if (C.ie){...}else{...}
+            $substr = $this->fix_js_if_then_else($substr);
+
+            // detect drag position for mouse AND touch
+            $substr = $this->fix_js_clientXY($substr, 'var difX');
+
+            // disable scrolling on touch screens
+            $substr = $this->fix_js_disable_event($substr);
+        }
+        $str = substr_replace($str, $substr, $start, $length);
+    }
+
+    public function fix_js_endDrag(&$str, $start, $length)  {
+        $substr = substr($str, $start, $length);
+
+        if (strpos($str, 'function endDrag', $start + $length)) {
+            $substr = ''; // remove first occurrence of this function
+        } else {
+            // reformat single line if (C.ie){...}else{...}
+            $substr = $this->fix_js_if_then_else($substr);
+
+            // add event handlers for touch screens
+            $search = '/(\s*)([a-z]+).on(mouse[a-z]+)=([a-z]+);?/';
+            //$replace = '$1$2.onmouse$3=$4;$1$2.touch$3=$4;';
+            $replace = '$1HP_remove_listener($2, \'$3\', doDrag);';
+            $substr = preg_replace($search, $replace, $substr);
+
+            // disable scrolling on touch screens
+            $substr = $this->fix_js_disable_event($substr);
+        }
+
+        $str = substr_replace($str, $substr, $start, $length);
+    }
+
+    public function fix_js_clientXY($str, $target) {
+        // replace Ev.client(X|Y) with "x" and "y" variables
+        $search = array('Ev.clientX', 'Ev.clientY');
+        $replace = array('x', 'y');
+        $str = str_replace($search, $replace, $str);
+
+        // set "x" and "y" for mouse or touch device
+        $search = '/(\s*)'.preg_quote($target, '/').'/s';
+        $replace = '$1'.'if (Ev.changedTouches) {'.
+                   '$1'."\t".'var x = Ev.changedTouches[0].clientX;'.
+                   '$1'."\t".'var y = Ev.changedTouches[0].clientY'.
+                   '$1'.'} else {'.
+                   '$1'."\t".'var x = Ev.clientX;'.
+                   '$1'."\t".'var y = Ev.clientY;'.
+                   '$1'.'}'.
+                   '$0';
+        return preg_replace($search, $replace, $str, 1);
+    }
+
+    public function fix_js_if_then_else($str)  {
+        $search = '/(\s*)if *\(C.ie\) *\{(.*?);?\} *else *\{(.*?);?\}/s';
+        $replace = '$1if (C.ie) {$1'."\t".'$2;$1} else {$1'."\t".'$3;$1}';
+        return preg_replace($search, $replace, $str);
+    }
+
+    public function fix_js_disable_event($substr)  {
+        $search = '/return (true|false);/';
+        $replace = 'HP_disable_event(e);';
+        return preg_replace($search, $replace, $substr);
     }
 
     function postprocessing() {

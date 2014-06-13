@@ -87,13 +87,13 @@ class quizport_output_hp_6_jmatch extends quizport_output_hp_6 {
             ."		var div = document.createElement('div');\n"
             ."		div.setAttribute('id', 'D' + i);\n"
             ."		div.setAttribute('class', 'CardStyle');\n"
-            ."		div.setAttribute('onmousedown', 'beginDrag(event, ' + i + ')');\n"
-            ."		myParentNode.appendChild(div);\n"
+            ."		div = myParentNode.appendChild(div);\n"
+            ."		HP_add_listener(div, 'mousedown', 'beginDrag(event, ' + i + ')');\n"
             ."	} else {\n"
             ."		document.write('".'<div id="'."D' + i + '".'" class="CardStyle" onmousedown="'."beginDrag(event, ' + i + ')".'"'."></div>');\n"
             ."	}\n"
             ."}\n"
-            ."// m = div = myParentNode = null;"
+            ."div = myParentNode = null;"
        ;
         $this->bodycontent = preg_replace($search, $replace, $this->bodycontent, 1);
     }
@@ -142,7 +142,7 @@ class quizport_output_hp_6_jmatch extends quizport_output_hp_6 {
     function get_js_functionnames() {
         // start list of function names
         $names = parent::get_js_functionnames();
-        $names .= ($names ? ',' : '').'CheckAnswers,beginDrag';
+        $names .= ($names ? ',' : '').'CardSetHTML,beginDrag,doDrag,endDrag,CheckAnswers';
         return $names;
     }
 
@@ -152,6 +152,7 @@ class quizport_output_hp_6_jmatch extends quizport_output_hp_6 {
 
     function fix_js_beginDrag(&$str, $start, $length) {
         $substr = substr($str, $start, $length);
+        parent::fix_js_beginDrag($substr, 0, $length);
         if ($pos = strpos($substr, '{')) {
             $insert = "\n"
                 ."	if (e && e.target && e.target.tagName && e.target.tagName.toUpperCase()=='OBJECT') {\n"
@@ -161,6 +162,10 @@ class quizport_output_hp_6_jmatch extends quizport_output_hp_6 {
             $substr = substr_replace($substr, $insert, $pos+1, 0);
         }
         $str = substr_replace($str, $substr, $start, $length);
+    }
+
+    public function get_beginDrag_target() {
+        return 'DC[CurrDrag]';
     }
 
     function fix_js_StartUp_DragAndDrop_Flashcard(&$substr) {
@@ -275,14 +280,14 @@ class quizport_output_hp_6_jmatch extends quizport_output_hp_6 {
 
         // replace code for hiding elements
         $search = '/(\s*)if \(is\.ie\){.*?}.*?}.*?}/s';
-        $replace = '\\1'
-            ."ShowElements(false, 'input');\\1"
-            ."ShowElements(false, 'select');\\1"
-            ."ShowElements(false, 'object');\\1"
-            ."ShowElements(true, 'object', 'FeedbackContent');\\1"
-            ."if (navigator.userAgent.indexOf('Chrome')>=0) {\\1"
-            ."	ShowElements(false, 'embed');\\1"
-            ."	ShowElements(true, 'embed', 'FeedbackContent');\\1"
+        $replace = '$1'
+            ."ShowElements(false, 'input');".'$1'
+            ."ShowElements(false, 'select');".'$1'
+            ."ShowElements(false, 'object');".'$1'
+            ."ShowElements(true, 'object', 'FeedbackContent');".'$1'
+            ."if (navigator.userAgent.indexOf('Chrome')>=0) {".'$1'
+            ."	ShowElements(false, 'embed');".'$1'
+            ."	ShowElements(true, 'embed', 'FeedbackContent');".'$1'
             ."}"
         ;
         $substr = preg_replace($search, $replace, $substr, 1);
@@ -331,14 +336,14 @@ class quizport_output_hp_6_jmatch extends quizport_output_hp_6 {
 
         // replace code for showing elements
         $search = '/(\s*)if \(is\.ie\){.*?}.*?}.*?}/s';
-        $replace = '\\1'
-            ."ShowElements(true, 'input');\\1"
-            ."ShowElements(true, 'select');\\1"
-            ."ShowElements(true, 'object');\\1"
-            ."ShowElements(false, 'object', 'FeedbackContent');\\1"
-            ."if (navigator.userAgent.indexOf('Chrome')>=0) {\\1"
-            ."	ShowElements(true, 'embed');\\1"
-            ."	ShowElements(false, 'embed', 'FeedbackContent');\\1"
+        $replace = '$1'
+            ."ShowElements(true, 'input');".'$1'
+            ."ShowElements(true, 'select');".'$1'
+            ."ShowElements(true, 'object');".'$1'
+            ."ShowElements(false, 'object', 'FeedbackContent');".'$1'
+            ."if (navigator.userAgent.indexOf('Chrome')>=0) {".'$1'
+            ."	ShowElements(true, 'embed');".'$1'
+            ."	ShowElements(false, 'embed', 'FeedbackContent');".'$1'
             ."}"
         ;
         $substr = preg_replace($search, $replace, $substr, 1);
@@ -364,7 +369,7 @@ class quizport_output_hp_6_jmatch extends quizport_output_hp_6 {
 
         // surround main body of function with if (id>=0) { ... }
         $search = '/(?<={)(.*)(?=if \(Pairs == F\.length\))/s';
-        $replace = "\n\t".'if (id>=0) {\\1}'."\n\t";
+        $replace = "\n\t".'if (id>=0) {$1}'."\n\t";
         $substr = preg_replace($search, $replace, $substr, 1);
 
         parent::fix_js_CheckAnswers($substr, 0, strlen($substr));

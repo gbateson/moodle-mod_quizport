@@ -30,7 +30,7 @@ class quizport_output_hp_6_jmix extends quizport_output_hp_6 {
         // we must add a false return value to segment links in order not to trigger the onbeforeunload event handler
         // (this is only really required on v6 output format)
         $search = '/(?<='.'onclick="'.')'.'AddSegment\(\[SegmentNumber\]\)'.'(?='.'"'.')/';
-        $replace = '\\0'.'; return false;';
+        $replace = '$0'.'; return false;';
         $this->headcontent = preg_replace($search, $replace, $this->headcontent);
     }
 
@@ -98,8 +98,8 @@ class quizport_output_hp_6_jmix extends quizport_output_hp_6 {
             ."		var div = document.createElement('div');\n"
             ."		div.setAttribute('id', 'D' + i);\n"
             ."		div.setAttribute('class', 'CardStyle');\n"
-            ."		div.setAttribute('onmousedown', 'beginDrag(event, ' + i + ')');\n"
-            ."		myParentNode.appendChild(div);\n"
+            ."		div = myParentNode.appendChild(div);\n"
+            ."		HP_add_listener(div, 'mousedown', 'beginDrag(event, ' + i + ')');\n"
             ."	} else {\n"
             ."		document.write('".'<div id="'."D' + i + '".'" class="CardStyle" onmousedown="'."beginDrag(event, ' + i + ')".'"'."></div>');\n"
             ."	}\n"
@@ -146,11 +146,20 @@ class quizport_output_hp_6_jmix extends quizport_output_hp_6 {
         $this->bodycontent = preg_replace($search, $replace, $this->bodycontent);
     }
 
-    function get_js_functionnames() {
+    function get_js_functionnames()  {
+        // Note that the drag functions get added twice to the html
+        // once from hp6card.js_ (this is actually the JMatch version)
+        // and once from djmix6.js_. Consequently, we need to process
+        // these functions twice: once to delete, and then again to modify
+        $drag = 'beginDrag,doDrag,endDrag';
         // start list of function names
         $names = parent::get_js_functionnames();
-        $names .= ($names ? ',' : '').'CheckAnswer,TimesUp,WriteToGuess';
+        $names .= ($names ? ',' : '')."CardSetHTML,$drag,CheckAnswer,TimesUp,WriteToGuess,$drag";
         return $names;
+    }
+
+    public function get_beginDrag_target() {
+        return 'Cds[CurrDrag]';
     }
 
     function fix_js_TimesUp(&$str, $start, $length) {
@@ -206,7 +215,7 @@ class quizport_output_hp_6_jmix extends quizport_output_hp_6 {
             .'(\s*\})' // $3
             .'/s'
         ;
-        $substr = preg_replace($search, '\\1\\2\\3', $substr, 1);
+        $substr = preg_replace($search, '$1$2$3', $substr, 1);
 
         // encapsulate the main body of the function code in an "if" block
         $search = ''
@@ -219,7 +228,7 @@ class quizport_output_hp_6_jmix extends quizport_output_hp_6 {
         if (preg_match($search, $substr, $matches, PREG_OFFSET_CAPTURE)) {
             $replace = "\n"
                 .'	if (GuessSequence.length){'
-                .preg_replace('/[\\n\\r]+/', '\\0	', $matches[1][0])."\n"
+                .preg_replace('/[\\n\\r]+/', '$0	', $matches[1][0])."\n"
                 ."	}\n"
             ;
             $substr = substr_replace($substr, $replace, $matches[1][1], strlen($matches[1][0]));
