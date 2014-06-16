@@ -155,8 +155,11 @@ class quizport_output_hp_6_jmatch extends quizport_output_hp_6 {
         parent::fix_js_beginDrag($substr, 0, $length);
         if ($pos = strpos($substr, '{')) {
             $insert = "\n"
-                ."	if (e && e.target && e.target.tagName && e.target.tagName.toUpperCase()=='OBJECT') {\n"
-                ."		return;\n"
+                ."	if (e && e.target && e.target.tagName) {\n"
+                ."		var tagname = e.target.tagName.toUpperCase();\n"
+                ."		if (tagname=='EMBED' || tagname=='OBJECT') {\n"
+                ."			return false;\n"
+                ."		}\n"
                 ."	}\n"
             ;
             $substr = substr_replace($substr, $insert, $pos+1, 0);

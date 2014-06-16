@@ -519,12 +519,6 @@ function quizport_upgrade($oldversion, $module=null, $stopversion=0) {
         quizport_upgrade_savepoint($newversion);
     }
 
-    $newversion = 2008040139;
-    if ($result && $oldversion < $newversion) {
-        $empty_cache = true;
-        quizport_upgrade_savepoint($newversion);
-    }
-
     $newversion = 2008040141;
     if ($result && $oldversion < $newversion) {
         $fields = array('entrycm', 'exitcm');
@@ -545,7 +539,7 @@ function quizport_upgrade($oldversion, $module=null, $stopversion=0) {
         quizport_upgrade_savepoint($newversion);
     }
 
-    $newversion = 2008040170;
+    $newversion = 2008040171;
     if ($result && $oldversion < $newversion) {
         $empty_cache = true;
         quizport_upgrade_savepoint($newversion);
