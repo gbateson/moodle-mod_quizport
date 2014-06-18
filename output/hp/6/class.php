@@ -1429,6 +1429,9 @@ class quizport_output_hp_6 extends quizport_output_hp {
                     ."		if (tagname=='EMBED' || tagname=='OBJECT') {\n"
                     ."			return false;\n"
                     ."		}\n"
+                    ."		if (tagname=='AUDIO' || tagname=='VIDEO') {\n"
+                    ."			return false;\n"
+                    ."		}\n"
                     ."	}\n"
                 ;
                 $substr = substr_replace($substr, $insert, $pos+1, 0);
