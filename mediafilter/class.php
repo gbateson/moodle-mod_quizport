@@ -504,6 +504,9 @@ class quizport_mediaplayer {
 
         // cache language strings
         static $str;
+        if (! isset($str)) {
+            $str = new stdClass();
+        }
         if (! isset($str->$filetype)) {
             $str->$filetype = get_string($filetype.'audio', 'mediaplugin');
         }

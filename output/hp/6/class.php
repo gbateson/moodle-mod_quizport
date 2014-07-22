@@ -161,11 +161,11 @@ class quizport_output_hp_6 extends quizport_output_hp {
 
             // standardize indentation to use tabs
             $this->scripts = str_replace('        ', "\t", $this->scripts);
+        }
 
-            // add link to external javascript libraries
-            foreach ($this->javascripts as $script) {
-                $this->scripts .= "\n".'<script type="text/javascript" src="'.$CFG->wwwroot.'/'.$script.'"></script>';
-            }
+        // add external javascript libraries
+        foreach ($this->javascripts as $script) {
+            $this->scripts .= "\n".'<script type="text/javascript" src="'.$CFG->wwwroot.'/'.$script.'"></script>';
         }
 
         // remove blank lines
@@ -174,7 +174,7 @@ class quizport_output_hp_6 extends quizport_output_hp {
         // put each <meta> tag on its own line
         $this->headcontent = preg_replace('/'.'([^\n])'.'(<\w+)'.'/', "\\1\n\\2", $this->headcontent);
 
-        // convert self closing tags to explictly closed tags (self-clocing not allowed in xhtml 1.1)
+        // convert self closing tags to explictly closed tags (self-closing not allowed in xhtml 1.1)
         // $this->headcontent = preg_replace('/<((\w+)[^>]*?)\s*\/>/i', '<\\1></\\2>', $this->headcontent);
 
         // append styles and scripts to the end of the $this->headcontent

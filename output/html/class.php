@@ -87,6 +87,9 @@ class quizport_output_html extends quizport_output {
 
         // transfer <script> tags from $this->headcontent to $this->scripts
         $this->scripts = '';
+        foreach ($this->javascripts as $script) {
+            $this->scripts .= "\n".'<script type="text/javascript" src="'.$CFG->wwwroot.'/'.$script.'"></script>';
+        }
         if (preg_match_all($this->tagpattern('script'), $this->headcontent, $matches, PREG_OFFSET_CAPTURE)) {
             foreach (array_reverse($matches[0]) as $match) {
                 // $match: [0] = matched string, [1] = offset to start of string
@@ -102,6 +105,7 @@ class quizport_output_html extends quizport_output {
 
             // standardize "} else {" formatting
             $this->scripts = preg_replace('/}\s*else\s*{/s', '} else {', $this->scripts);
+
         }
 
         // remove blank lines

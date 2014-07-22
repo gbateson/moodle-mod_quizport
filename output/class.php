@@ -81,12 +81,18 @@ class quizport_output {
     var $embed_object_id  = 'quizport_embed_object';
     var $embed_object_onload  = 'set_embed_object_height';
 
+    // external javascripts required for this format
+    var $javascripts = array();
+
     // constructor function
     function quizport_output(&$quiz) {
+
         $fields = get_object_vars($quiz);
         foreach ($fields as $field => $value) {
             $this->$field = $quiz->$field;
         }
+
+        array_push($this->javascripts, 'mod/quizport/output/event.js');
 
         $this->framename = optional_param('framename', '', PARAM_ALPHA);
 

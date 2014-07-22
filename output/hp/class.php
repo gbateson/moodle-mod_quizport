@@ -4,7 +4,6 @@ class quizport_output_hp extends quizport_output {
     var $templatestrings = ''; // special template strings to be expanded
     var $templatesfolders = array(); // templates folders (relative to Moodle dataroot)
 
-    var $javascripts = array(); // external javascripts required for this format
     var $js_object_type = ''; // type of javascript object to collect quiz results from browser
 
     // the id/name of the of the form which returns results to the browser
