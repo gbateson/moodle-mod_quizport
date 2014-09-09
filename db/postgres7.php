@@ -539,7 +539,7 @@ function quizport_upgrade($oldversion, $module=null, $stopversion=0) {
         quizport_upgrade_savepoint($newversion);
     }
 
-    $newversion = 2008040174;
+    $newversion = 2008040175;
     if ($result && $oldversion < $newversion) {
         $empty_cache = true;
         quizport_upgrade_savepoint($newversion);

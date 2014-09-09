@@ -2,7 +2,7 @@
 class quizport_output_hp_6_jmix_xml_v6_plus_keypress extends quizport_output_hp_6_jmix_xml_v6_plus {
 
     function fix_bodycontent() {
-        parent::$this->fix_bodycontent_DragAndDrop();
+        parent::fix_bodycontent_DragAndDrop();
 
         $search = 'onclick="location.reload()"';
         $replace = 'onclick="quizport_jmix_restart()"';

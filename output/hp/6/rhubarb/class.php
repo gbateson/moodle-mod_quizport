@@ -101,7 +101,7 @@ class quizport_output_hp_6_rhubarb extends quizport_output_hp_6 {
     }
 
     function fix_js_CheckFinished(&$str, $start, $length) {
-        parent::$this->fix_js_CheckAnswers($str, $start, $length);
+        parent::fix_js_CheckAnswers($str, $start, $length);
     }
 
     function get_stop_function_intercept() {
