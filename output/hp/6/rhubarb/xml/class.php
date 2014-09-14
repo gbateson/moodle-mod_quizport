@@ -28,11 +28,14 @@ class quizport_output_hp_6_rhubarb_xml extends quizport_output_hp_6_rhubarb {
     function expand_WordsArray() {
         $str = '';
 
+        $text = $this->source->xml_value('data,rhubarb-text');
+        $text = $this->source->html_entity_decode($text); // convert to utf8
+
         $space = ' \\x09\\x0A\\x0C\\x0D'; // " \t\n\r\l"
         $punc = preg_quote('!"#$%&()*+,-./:;+<=>?@[]\\^_`{|}~', '/'); // not apostrophe \'
         $search = '/([^'.$punc.$space.']+)|(['.$punc.']['.$punc.$space.']*)/s';
 
-        if (preg_match_all($search, $this->source->xml_value('data,rhubarb-text'), $matches)) {
+        if (preg_match_all($search, $text, $matches)) {
             foreach ($matches[0] as $i => $word) {
                 $str .= "Words[$i] = '".$this->source->js_value_safe($word, true)."';\n";
             }
