@@ -1840,9 +1840,10 @@ class quizport_output {
         $users = array();
         $quizattemptids = array_keys($quizattempts);
         foreach ($quizattemptids as $id) {
-            $quizattempt->questionscores = array();
-            $userid = $quizattempts[$id]->userid;
 
+            $quizattempts[$id]->questionscores = array();
+
+            $userid = $quizattempts[$id]->userid;
             if (! isset($users[$userid])) {
                 $users[$userid] = (object)array(
                     'firstname' => $quizattempts[$id]->firstname,
@@ -1946,8 +1947,8 @@ class quizport_output {
 
                 // add question scores
                 foreach ($questionids as $questionid) {
-                    if (isset($quizattempt->questionscores[$questionid])) {
-                        $text = $quizattempt->questionscores[$questionid];
+                    if (isset($quizattempts[$quizattemptid]->questionscores[$questionid])) {
+                        $text = $quizattempts[$quizattemptid]->questionscores[$questionid];
                     } else {
                         $text = '-';
                     }
