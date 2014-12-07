@@ -6,10 +6,6 @@ class quizport_file_hp extends quizport_file {
     var $hbs_software; // hotpot or textoys
     var $hbs_quiztype; //  jcloze, jcross, jmatch, jmix, jquiz, quandary, rhubarb, sequitur
 
-    function is_html() {
-        return preg_match('/\.html?$/', $this->filename);
-    }
-
     function get_name() {
         if ($this->is_html()) {
             return $this->html_get_name();
@@ -387,111 +383,6 @@ class quizport_file_hp extends quizport_file {
     function xml_value_js($tags, $more_tags=null, $default='', $nl2br=true, $convert_to_unicode=true) {
         $value = $this->xml_value($tags, $more_tags, $default, $nl2br);
         return $this->js_value_safe($value, $convert_to_unicode);
-    }
-    function js_value_safe($str, $convert_to_unicode=false) {
-        // encode a string for javascript
-        static $replace_pairs = array(
-            // backslashes and quotes
-            '\\'=>'\\\\', "'"=>"\\'", '"'=>'\\"',
-            // newlines (win = "\r\n", mac="\r", linux/unix="\n")
-            "\r\n"=>'\\n', "\r"=>'\\n', "\n"=>'\\n',
-            // other (closing tag is for XHTML compliance)
-            "\0"=>'\\0', '</'=>'<\\/'
-        );
-        $str = strtr($str, $replace_pairs);
-
-        // convert (hex and decimal) html entities to javascript unicode, if required
-        if ($convert_to_unicode) {
-            $str = $this->utf8_to_entities($str, 1);
-            $str = preg_replace('/&#x([0-9A-F]+);/i', '\\u\\1', $str);
-            $str = preg_replace('/&#(\d+);/e', "'\\u'.sprintf('%04X', '\\1')", $str);
-        }
-        return $str;
-    }
-    function utf8_to_entities($str, $entity_type=2) {
-        // $entity_type: see utf8_to_entity (below)
-        // unicode characters can be detected by checking the hex value of a character
-        //  00 - 7F : ascii char (roman alphabet + punctuation)
-        //  80 - BF : byte 2, 3 or 4 of a unicode char
-        //  C0 - DF : 1st byte of 2-byte char
-        //  E0 - EF : 1st byte of 3-byte char
-        //  F0 - FF : 1st byte of 4-byte char
-        // if the string doesn't match any of the above, it might be
-        //  80 - FF : single-byte, non-ascii char
-        $search = '/'.'[\xc0-\xdf][\x80-\xbf]'.'|'.'[\xe0-\xef][\x80-\xbf]{2}'.'|'.'[\xf0-\xff][\x80-\xbf]{3}'.'|'.'[\x80-\xff]'.'/e';
-        return preg_replace($search, '$this->utf8_to_entity("\\0", $entity_type)', $str);
-    }
-    function utf8_to_entity($char, $entity_type=0) {
-        // $entity_type:
-        //   2 : html hex entity e.g. &#x12FE;
-        //   1 : javascript entity e.g. \u12FE
-        //   0 : decimal number e.g. 28001
-
-        // many thanks for the ideas from ...
-        // http://www.zend.com/codex.php?id=835&single=1
-
-        // array used to figure out what number to decrement from character order value
-        // according to the number of characters used to map unicode to ascii by utf-8
-        static $UTF8_DECREMENT = array(
-            1=>0, 2=>192, 3=>224, 4=>240 // hex : 1=>0, 2=>0xB, 3=>0xD, 4=>0xE
-        );
-
-        // the number of bits to shift each character by
-        static $UTF8_SHIFT = array(
-            1 => array(0=>0),
-            2 => array(0=>6,  1=>0),
-            3 => array(0=>12, 1=>6,  2=>0),
-            4 => array(0=>18, 1=>12, 2=>6, 3=>0)
-        );
-
-        $dec = 0;
-        $len = strlen($char);
-        for ($pos=0; $pos<$len; $pos++) {
-            $ord = ord ($char{$pos});
-            $ord -= ($pos ? 128 : $UTF8_DECREMENT[$len]);
-            $dec += ($ord << $UTF8_SHIFT[$len][$pos]);
-        }
-        switch ($entity_type) {
-            case 2: return '&#x'.sprintf('%04X', $dec).';';
-            case 1 : return '\\u'.sprintf('%04X', $dec);
-            default: return $dec;
-        }
-    }
-    function html_entity_decode($str) {
-        static $entities_table;
-
-        if (floatval(PHP_VERSION)>=5.0 && function_exists('html_entity_decode')) {
-            return html_entity_decode($str, ENT_QUOTES, 'utf-8');
-        } else {
-            // get html entities table (first time only)
-            if (! isset($entities_table)) {
-                $entities_table = get_html_translation_table(HTML_ENTITIES);
-                $entities_table = array_flip($entities_table);
-            }
-
-            // convert numeric html entities
-            $str = preg_replace('/&#x([0-9a-f]+);/ie', '$this->dec_to_utf8(hexdec("\\1"))', $str);
-            $str = preg_replace('/&#([0-9]+);/e', '$this->dec_to_utf8("\\1")', $str);
-
-            // convert named html entities
-            return strtr($str, $entities_table);
-        }
-    }
-    function dec_to_utf8($dec) {
-        // thanks to Miguel Perez: http://jp2.php.net/chr (19-Sep-2007)
-        if ($dec <= 0x7F) {
-            return chr($dec);
-        }
-        if ($dec <= 0x7FF) {
-            return chr(0xC0 | $dec >> 6).chr(0x80 | $dec & 0x3F);
-        }
-        if ($dec <= 0xFFFF) {
-            return chr(0xE0 | $dec >> 12).chr(0x80 | $dec >> 6 & 0x3F).chr(0x80 | $dec & 0x3F);
-        }
-        if ($dec <= 0x10FFFF) {
-            return chr(0xF0 | $dec >> 18).chr(0x80 | $dec >> 12 & 0x3F).chr(0x80 | $dec >> 6 & 0x3F).chr(0x80 | $dec & 0x3F);
-        }
-        return '';
     }
 
     // synchonize file and Moodle settings
