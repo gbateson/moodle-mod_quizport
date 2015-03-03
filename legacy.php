@@ -1,13 +1,24 @@
 <?php // $Id$
 
 // Moodle's major release number (2.0, 1.9, etc)
-if (isset($GLOBALS['release'])) {
-    // an admin user doing an update
-    $CFG->majorrelease = floatval($GLOBALS['release']);
-} else if (isset($CFG->release)) {
-    $CFG->majorrelease = floatval($CFG->release);
-} else {
-    $CFG->majorrelease = 2.0;
+$CFG->majorrelease = 0;
+if (isset($CFG->dirroot)) {
+    if (file_exists($CFG->dirroot.'/version.php')) {
+        include($CFG->dirroot.'/version.php');
+        if (isset($release)) {
+            $CFG->majorrelease = floatval($release);
+        }
+    }
+}
+if ($CFG->majorrelease) {
+    if (isset($GLOBALS['release'])) {
+        // an admin user doing an update
+        $CFG->majorrelease = floatval($GLOBALS['release']);
+    } else if (isset($CFG->release)) {
+        $CFG->majorrelease = floatval($CFG->release);
+    } else {
+        $CFG->majorrelease = 2.0;
+    }
 }
 
 // add missing functions, classes, constants and strings
