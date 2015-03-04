@@ -1923,7 +1923,9 @@ function xmldb_quizport_locate_externalfile($contextid, $component, $filearea, $
 
         // save $root_path, because it may get messed up by
         // $repository->get_listing($path), if $path is non-existant
-        if (isset($repository->root_path)) {
+        if (method_exists($repository, 'get_rootpath')) {
+            $root_path = $repository->get_rootpath();
+        } else if (isset($repository->root_path)) {
             $root_path = $repository->root_path;
         } else {
             $root_path = false;
