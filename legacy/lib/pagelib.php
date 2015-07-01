@@ -64,7 +64,7 @@ function page_create_object($type, $id = NULL) {
 
     $classname = page_map_class($type);
 
-    $object = &new $classname;
+    $object = new $classname;
     // TODO: subclassing check here
 
     if ($object->get_type() !== $type) {
