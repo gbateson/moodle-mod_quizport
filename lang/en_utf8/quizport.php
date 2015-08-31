@@ -52,6 +52,7 @@ $string['bodystylescolor'] = 'Text color';
 $string['bodystylesfont'] = 'Font size and family';
 $string['bodystylesmargin'] = 'Left and right margin';
 $string['cacherecords'] = 'QuizPort cache records';
+$string['cannotaddonmoodle2'] = 'Sorry, it is not possible to add QuizPort activities on this version of Moodle. <br />Please use the TaskChain module instead.';
 $string['canrestartquiz'] = 'Your results so far will be saved and you can redo \"$a\" later';
 $string['canrestartunit'] = 'Your results so far will be saved but if you want to redo this activity again later, you will have to start from the beginning.';
 $string['canresumequiz'] = 'Your results so far will be saved and you can resume \"$a\" later.';

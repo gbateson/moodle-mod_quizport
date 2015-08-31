@@ -35,6 +35,15 @@ if (! class_exists('MoodleQuickForm_passwordunmask')) {
 if ($CFG->majorrelease >= 2.0) {
     class mod_quizport_mod_form extends moodleform_mod {
         function definition() {
+            $name = 'cannotaddonmoodle2';
+            $this->_form->addElement('static', $name, '', get_string($name, 'quizport'));
+
+            // fix error on line 221 of "course/moodleform_mod.php"
+            // nonexistent html element 'completionunlocked'
+            $name = 'completionunlocked';
+            $this->_form->addElement('hidden', $name, 0);
+            $this->_form->setType($name, PARAM_INT);
+
             $this->standard_hidden_coursemodule_elements();
             $this->_form->addElement('cancel');
         }
@@ -66,7 +75,7 @@ if ($CFG->majorrelease >= 2.0) {
                 $is_add = false;
             }
 
-            $mform =&$this->_form;
+            $mform = &$this->_form;
 
             //-----------------------------------------------------------------------------------
             $mform->addElement('header', 'general', get_string('general', 'form'));
