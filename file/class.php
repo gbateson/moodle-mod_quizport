@@ -66,10 +66,7 @@ class quizport_file {
     //  F0 - FF : 1st byte of 4-byte char
     // if the string doesn't match any of the above, it might be
     //  80 - FF : single-byte, non-ascii char
-    var $search_unicode_chars = '/'.'[\xc0-\xdf][\x80-\xbf]'.
-                                '|'.'[\xe0-\xef][\x80-\xbf]{2}'.
-                                '|'.'[\xf0-\xff][\x80-\xbf]{3}'.
-                                '|'.'[\x80-\xff]'.'/e';
+    var $search_unicode_chars = '/[\xc0-\xdf][\x80-\xbf]|[\xe0-\xef][\x80-\xbf]{2}|[\xf0-\xff][\x80-\xbf]{3}|[\x80-\xff]/e';
 
     // constructor function
     function quizport_file($file, $location, $getquizfiles=false, $getquizchain=false) {
