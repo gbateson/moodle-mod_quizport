@@ -7,7 +7,7 @@ class quizport_output_hp_6_jcloze extends quizport_output_hp_6 {
     var $templatestrings = 'PreloadImageList';
 
     // Glossary autolinking settings
-    var $headcontent_strings = 'Feedback|Correct|Incorrect|GiveHint|YourScoreIs|Guesses|(?:I\[\d+\]\[1\]\[\d+\]\[2\])';
+    var $headcontent_strings = 'Feedback|Correct|Incorrect|GiveHint|YourScoreIs|Guesses|(?:I\[\d+\]\[[12]\])';
     var $headcontent_arrays = '';
 
     // constructor function

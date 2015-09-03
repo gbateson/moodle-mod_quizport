@@ -1781,6 +1781,7 @@ class quizport_output_hp_6 extends quizport_output_hp {
 
     function filter_text_bodycontent() {
         // convert html entities to unicode
+
         $search = '/&#x([0-9a-f]+);/ie';
         $replace = '$this->source->dec_to_utf8(hexdec("\\1"))';
         $this->bodycontent = preg_replace($search, $replace, $this->bodycontent);

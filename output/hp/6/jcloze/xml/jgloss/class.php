@@ -4,10 +4,6 @@ class quizport_output_hp_6_jcloze_xml_jgloss extends quizport_output_hp_6_jcloze
     var $filetypes = array('hp_6_jcloze_xml');
     var $js_object_type = 'JClozeJGloss';
 
-    // Glossary autolinking settings (override standard JCloze - (?:I\[\d+\]\[1\]\[\d+\]\[2\]))
-    var $headcontent_strings = 'Feedback|Correct|Incorrect|GiveHint|YourScoreIs|Guesses|(?:I\[\d+\]\[2\])';
-    var $headcontent_arrays = '';
-
     // constructor function
     function quizport_output_hp_6_jcloze_xml_jgloss(&$quiz) {
         parent::quizport_output_hp_6_jcloze_xml($quiz);

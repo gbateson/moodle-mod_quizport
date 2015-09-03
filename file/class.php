@@ -47,6 +47,30 @@ class quizport_file {
     var $exittext; // the text, if any, that could be used on the unit's entry page
     var $nextquiz; // the next quiz, if any, in this chain
 
+    // encode a string for javascript
+    var $javascript_replace_pairs = array(
+        // backslashes and quotes
+        '\\'=>'\\\\', "'"=>"\\'", '"'=>'\\"',
+        // newlines (win = "\r\n", mac="\r", linux/unix="\n")
+        "\r\n"=>'\\n', "\r"=>'\\n', "\n"=>'\\n',
+        // other (closing tag is for XHTML compliance)
+        "\0"=>'\\0', '</'=>'<\\/'
+    );
+
+    // $entity_type: see utf8_to_entity (below)
+    // unicode characters can be detected by checking the hex value of a character
+    //  00 - 7F : ascii char (roman alphabet + punctuation)
+    //  80 - BF : byte 2, 3 or 4 of a unicode char
+    //  C0 - DF : 1st byte of 2-byte char
+    //  E0 - EF : 1st byte of 3-byte char
+    //  F0 - FF : 1st byte of 4-byte char
+    // if the string doesn't match any of the above, it might be
+    //  80 - FF : single-byte, non-ascii char
+    var $search_unicode_chars = '/'.'[\xc0-\xdf][\x80-\xbf]'.
+                                '|'.'[\xe0-\xef][\x80-\xbf]{2}'.
+                                '|'.'[\xf0-\xff][\x80-\xbf]{3}'.
+                                '|'.'[\x80-\xff]'.'/e';
+
     // constructor function
     function quizport_file($file, $location, $getquizfiles=false, $getquizchain=false) {
         global $CFG, $course;
@@ -531,16 +555,8 @@ class quizport_file {
 
     // escape a string for use in javascript
     function js_value_safe($str, $convert_to_unicode=false) {
-        // encode a string for javascript
-        static $replace_pairs = array(
-            // backslashes and quotes
-            '\\'=>'\\\\', "'"=>"\\'", '"'=>'\\"',
-            // newlines (win = "\r\n", mac="\r", linux/unix="\n")
-            "\r\n"=>'\\n', "\r"=>'\\n', "\n"=>'\\n',
-            // other (closing tag is for XHTML compliance)
-            "\0"=>'\\0', '</'=>'<\\/'
-        );
-        $str = strtr($str, $replace_pairs);
+
+        $str = strtr($str, $this->javascript_replace_pairs);
 
         // convert (hex and decimal) html entities to javascript unicode, if required
         if ($convert_to_unicode) {
@@ -553,17 +569,7 @@ class quizport_file {
 
     // convert utf8 chars to HTML entities
     function utf8_to_entities($str, $entity_type=2) {
-        // $entity_type: see utf8_to_entity (below)
-        // unicode characters can be detected by checking the hex value of a character
-        //  00 - 7F : ascii char (roman alphabet + punctuation)
-        //  80 - BF : byte 2, 3 or 4 of a unicode char
-        //  C0 - DF : 1st byte of 2-byte char
-        //  E0 - EF : 1st byte of 3-byte char
-        //  F0 - FF : 1st byte of 4-byte char
-        // if the string doesn't match any of the above, it might be
-        //  80 - FF : single-byte, non-ascii char
-        $search = '/'.'[\xc0-\xdf][\x80-\xbf]'.'|'.'[\xe0-\xef][\x80-\xbf]{2}'.'|'.'[\xf0-\xff][\x80-\xbf]{3}'.'|'.'[\x80-\xff]'.'/e';
-        return preg_replace($search, '$this->utf8_to_entity("\\0", $entity_type)', $str);
+        return preg_replace($this->search_unicode_chars, '$this->utf8_to_entity("\\0", $entity_type)', $str);
     }
 
     // convert a single utf8 char to an HTML entity
