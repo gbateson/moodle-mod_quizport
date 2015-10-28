@@ -268,6 +268,13 @@ class quizport_file_hp extends quizport_file {
             // Note: we could also use '<![CDATA[&]]>' as the replace string
             $search = '/&(?!(?:[a-zA-Z]+|#[0-9]+|#x[0-9a-fA-F]+);)/';
             $this->filecontents = preg_replace($search, '&amp;', $this->filecontents);
+
+            // the following control characters are not allowed in XML
+            // and need to be removed because they will break xmlize()
+            // basically this is the range 00-1F and the delete key 7F
+            // but excluding tab 09, newline 0A and carriage return 0D
+            $search = '/[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f]/';
+            $this->filecontents = preg_replace($search, '', $this->filecontents);
         }
     }
 
