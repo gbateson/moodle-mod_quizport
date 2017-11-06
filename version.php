@@ -5,6 +5,9 @@
 
 if (empty($CFG)) {
     global $CFG;
+    if (empty($CFG)) {
+        $CFG = new stdClass();
+    }
 }
 
 if (empty($CFG->branch)) {
